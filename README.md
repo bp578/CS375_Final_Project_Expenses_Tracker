@@ -8,3 +8,16 @@
 - Summarize spend per category, compare spend from month to month
 - Identify (or have user input) recurring payments, visualize somehow
 - Set monthly budget, perhaps per category, view how close you are to exceeding budget
+
+### Setup
+1. Create a setup.sql file
+Insert this into `setup.sql` file:
+```sql
+CREATE DATABASE expensetracker;
+\c expensetracker
+CREATE TABLE accounts (
+id SERIAL PRIMARY KEY,
+username VARCHAR(15),
+pass VARCHAR(15)
+);
+```
