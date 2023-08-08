@@ -10,7 +10,7 @@
 - Set monthly budget, perhaps per category, view how close you are to exceeding budget
 
 ### Setup
-1. Create a setup.sql file
+1. Create a setup.sql file<br />
 Insert this into `setup.sql` file:
 ```sql
 CREATE DATABASE expensetracker;
@@ -21,3 +21,6 @@ username VARCHAR(15),
 pass VARCHAR(15)
 );
 ```
+2. Run `npm install`
+3. Navigate to directory `src/app`
+4. Run `node server.js`
