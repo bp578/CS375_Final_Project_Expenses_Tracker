@@ -1,6 +1,6 @@
 # CS375_Final_Project_Expenses_Tracker
 
-#CONTRACT
+# CONTRACT
 
 - User accounts and management
 - Can import CSV of financial data, can also manually add income/expenses - might want some logic if you reimport the same CSV to not duplicate transactions or delete user-added transactions
