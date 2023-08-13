@@ -3,9 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Your Expenses</title>
+    <link rel="stylesheet" type="text/css" href="styles.css">
 </head>
 <body>
     <header>Welcome User!</header>
+    <div class="form">
+        <div>
+            <label for="transaction">Transaction:</label>
+            <input id="transaction" name="transaction" type="text">
+        </div>
+
+        <div>
+            <label for="category">Category:</label>
+            <select id="category" name="category">
+                <option value="Food">Food/Drink</option>
+                <option value="Entertainment">Entertainment</option>
+                <option value="Housing">Housing</option>
+                <option value="Utilities">Utilities</option>
+                <option value="Groceries">Groceries</option>
+                <option value="Transportation">Transportation</option>
+                <option value="Clothing">Clothing</option>
+                <option value="Edcuation">Education</option>
+                <option value="Gifts">Gifts/Donations</option>
+                <option value="Travel">Travel</option>
+                <option value="Misc">Misc</option>
+            </select>
+        </div>
+
+        <div>
+            <label for="amount">Amount ($):</label>
+            <input id="amount" type="number">
+        </div>
+
+    </div>
+
+    <button id="add">Add transaction</button>
+    <table>
+        <thead>
+            <tr><th>Transaction</th><th>Category</th><th>Amount</th></tr>
+        </thead>
+        <tbody id="expenses"></tbody>
+    </table>
+    <script src="land.js"></script>
 </body>
 </html>
