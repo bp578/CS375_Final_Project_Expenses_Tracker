@@ -21,6 +21,7 @@ username VARCHAR(15),
 pass VARCHAR(15)
 );
 ```
-2. Run `npm install`
+2. Run `psql --username [your postgres username] -f setup.sql` in the same directory as setup.sql (should be at the top level).
 3. Navigate to directory `src/app`
-4. Run `node server.js`
+4. Run `npm install`
+5. Run `node server.js`
