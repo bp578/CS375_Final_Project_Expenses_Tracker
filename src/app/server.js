@@ -10,13 +10,23 @@ let port = 3000;
 let app = express();
 let pool = new Pool(env);
 
-app.use(express.static(__dirname + "public"));
+app.use(express.static(__dirname + "/public"));
 app.use(express.json());
 pool.connect().then(() => {
     console.log(`Connected to database: ${env.database}`);
 });
 
 let tokenStorage = {};
+
+function verifyToken(token){
+    try {
+        if (tokenStorage[token]){
+            return tokenStorage[token];
+        }
+    } catch (error) {
+        return error;
+    }
+}
 
 let cookieOptions = {
     httpOnly: true,
@@ -117,6 +127,10 @@ app.get(`/login`, async (req, res) => {
         console.log(tokenStorage);
         return res.cookie("token", token, cookieOptions).json({url: `http://${hostname}:${port}/land.html`});
     };
+});
+
+app.get("/logout", (req, res) => {
+    res.send();
 });
 
 app.listen(port, hostname, () => {
