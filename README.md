@@ -21,7 +21,7 @@ username VARCHAR(50),
 pass VARCHAR(100)
 );
 ```
-2. In the file `env_temp.sql`, change the fields `user` and `password` to your own settings
+2. In the file `env_temp.json`, change the fields `user` and `password` to your own settings
 
 3. Run in terminal `npm install` or `npm i`
 4. Run in terminal `npm run setup`
