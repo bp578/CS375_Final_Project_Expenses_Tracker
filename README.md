@@ -11,7 +11,6 @@
 
 ### Setup
 1. In the file `env_temp.json`, change the fields `user` and `password` to your own settings
-
 2. Run in terminal `npm install` or `npm i`
 3. Run in terminal `npm run setup`
 4. Run in terminal `npm run start`
