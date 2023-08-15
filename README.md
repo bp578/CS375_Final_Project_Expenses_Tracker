@@ -10,19 +10,8 @@
 - Set monthly budget, perhaps per category, view how close you are to exceeding budget
 
 ### Setup
-1. Create a setup.sql file<br />
-Insert this into `setup.sql` file:
-```sql
-CREATE DATABASE expensetracker;
-\c expensetracker
-CREATE TABLE accounts (
-id SERIAL PRIMARY KEY,
-username VARCHAR(50),
-pass VARCHAR(100)
-);
-```
-2. In the file `env_temp.json`, change the fields `user` and `password` to your own settings
+1. In the file `env_temp.json`, change the fields `user` and `password` to your own settings
 
-3. Run in terminal `npm install` or `npm i`
-4. Run in terminal `npm run setup`
-5. Run in terminal `npm run start`
+2. Run in terminal `npm install` or `npm i`
+3. Run in terminal `npm run setup`
+4. Run in terminal `npm run start`
