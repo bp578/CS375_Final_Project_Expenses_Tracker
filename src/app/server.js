@@ -4,19 +4,36 @@ let argon2 = require("argon2");
 let cookieParser = require("cookie-parser");
 let crypto = require("crypto");
 
-let env = require("../../env.json");
+let env;
+try {
+    env = require("../../env.json");
+} catch (err){
+    env = require("../../env_temp.json");
+};
+
 let hostname = "localhost";
 let port = 3000;
 let app = express();
 let pool = new Pool(env);
 
-app.use(express.static("public"));
+app.use(express.static(__dirname + "/public"));
+
 app.use(express.json());
 pool.connect().then(() => {
     console.log(`Connected to database: ${env.database}`);
 });
 
 let tokenStorage = {};
+
+function verifyToken(token){
+    try {
+        if (tokenStorage[token]){
+            return tokenStorage[token];
+        }
+    } catch (error) {
+        return error;
+    }
+}
 
 let cookieOptions = {
     httpOnly: true,
@@ -220,7 +237,9 @@ async function userExists(user) {
         return false;
     }
 }
-
+app.get("/logout", (req, res) => {
+    res.send();
+});
 
 app.listen(port, hostname, () => {
     console.log(`Connecting to: http://${hostname}:${port}`);

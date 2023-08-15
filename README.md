@@ -10,18 +10,7 @@
 - Set monthly budget, perhaps per category, view how close you are to exceeding budget
 
 ### Setup
-1. Create a setup.sql file<br />
-Insert this into `setup.sql` file:
-```sql
-CREATE DATABASE expensetracker;
-\c expensetracker
-CREATE TABLE accounts (
-id SERIAL PRIMARY KEY,
-username VARCHAR(15),
-pass VARCHAR(15)
-);
-```
-2. Run `psql --username [your postgres username] -f setup.sql` in the same directory as setup.sql (should be at the top level).
-3. Navigate to directory `src/app`
-4. Run `npm install`
-5. Run `node server.js`
+1. In the file `env_temp.json`, change the fields `user` and `password` to your own settings
+2. Run in terminal `npm install` or `npm i`
+3. Run in terminal `npm run setup`
+4. Run in terminal `npm run start`
