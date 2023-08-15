@@ -4,7 +4,13 @@ let argon2 = require("argon2");
 let cookieParser = require("cookie-parser");
 let crypto = require("crypto");
 
-let env = require("../../env.json");
+let env;
+try {
+    env = require("../../env.json");
+} catch (err){
+    env = require("../../env_temp.json");
+};
+
 let hostname = "localhost";
 let port = 3000;
 let app = express();
