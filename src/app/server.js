@@ -120,7 +120,7 @@ app.get(`/login`, async (req, res) => {
         let token = crypto.randomBytes(32).toString("hex");
         tokenStorage[token] = user;
         console.log(tokenStorage);
-        return res.cookie("token", token, cookieOptions).json({ url: `http://${hostname}:${port}/land.html` });
+        return res.cookie("token", token, cookieOptions).json({ url: `http://${hostname}:${port}/${user}/land.html` });
     };
 });
 
@@ -128,6 +128,7 @@ function assignTableToUser(user) {
     pool.query(
         `CREATE TABLE ${user} (
             transaction_id INT PRIMARY KEY,
+            date DATE,
             transaction_name VARCHAR(50),
             category VARCHAR(50),
             amount INT
@@ -142,18 +143,84 @@ function assignTableToUser(user) {
 
 // Adding/Deleting Expenses
 app.post('/add', (req, res) => {
-    let transaction = req.query.transaction;
-    let category = req.query.category;
-    let amount = req.query.amount;
+    let body = req.body;
+    let user = body.user;
+    let transaction = body.transaction;
+    let date = body.date;
+    let category = body.category;
+    let amount = body.amount;
 
-    if (!addQueryIsValid(req.query)) {
+    if (!addRequestIsValid(body)) {
         return res.status(400).json({ error: "Error with query parameters" });
     }
 
+    pool.query(
+        `INSERT INTO ${user}(date, transaction_name, category, amount) VALUES($1, $2, $3, $4) RETURNING *`,
+        [date, transaction, category, amount]
+    ).then((result) => {
+        console.log("Inserted: ");
+        console.log(result.rows);
+    }).catch((error) => {
+        console.log(`Error: Cannot add expenses to user `);
+        console.log(error);
+        return res.status(500).send();
+    })
+
     //Add to database once that is implemented. Return an empty json body for now. 
-    return res.status(200).json({});
+    return res.status(200).send();
 
 });
+
+//Validation
+function addRequestIsValid(body) {
+    if (!body.transaction || !body.date || !body.user || !body.category || !body.amount) {
+        return false;
+    }
+
+    //Any name and category is valid for now. Maybe add a list of all valid categories later?
+    return (Number.isFinite(Number.parseInt(body.amount))) && isValidSQLDateFormat(body.date) && userExists(body.user);
+
+}
+
+function isValidSQLDateFormat(dateString) {
+    const pattern = /^\d{4}-\d{2}-\d{2}$/;
+
+    if (!pattern.test(dateString)) {
+        return false;
+    }
+
+    const dateComponents = dateString.split('-');
+    const year = parseInt(dateComponents[0], 10);
+    const month = parseInt(dateComponents[1], 10);
+    const day = parseInt(dateComponents[2], 10);
+
+    // Create a Date object and validate its components
+    const dateObject = new Date(year, month - 1, day);
+    return (
+        dateObject.getFullYear() === year &&
+        dateObject.getMonth() === month - 1 &&
+        dateObject.getDate() === day
+    );
+}
+
+async function userExists(user) {
+    try {
+        const result = await pool.query(
+            `SELECT 1 FROM accounts WHERE username = $1`, [user]
+        );
+
+        if (result.rowCount >= 1) {
+            return true;
+        } else {
+            return false;
+        }
+    } catch (error) {
+        console.log("Error with validating user");
+        console.log(error);
+        return false;
+    }
+}
+
 
 app.listen(port, hostname, () => {
     console.log(`Connecting to: http://${hostname}:${port}`);
