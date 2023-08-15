@@ -17,10 +17,10 @@ CREATE DATABASE expensetracker;
 \c expensetracker
 CREATE TABLE accounts (
 id SERIAL PRIMARY KEY,
-username VARCHAR(15),
-pass VARCHAR(15)
+username VARCHAR(50),
+pass VARCHAR(100)
 );
 ```
-2. Run `npm install`
-3. Navigate to directory `src/app`
-4. Run `node server.js`
+2. Run in terminal `npm install` or `npm i`
+3. Run in terminal `npm run setup`
+4. Run in terminal `npm run start`

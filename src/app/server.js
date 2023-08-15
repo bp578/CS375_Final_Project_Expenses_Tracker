@@ -10,7 +10,7 @@ let port = 3000;
 let app = express();
 let pool = new Pool(env);
 
-app.use(express.static("src/app/public"));
+app.use(express.static(__dirname + "public"));
 app.use(express.json());
 pool.connect().then(() => {
     console.log(`Connected to database: ${env.database}`);

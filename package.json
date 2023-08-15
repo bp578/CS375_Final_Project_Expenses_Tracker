@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "setup": "psql --username postgres -f login.sql",
+    "start": "cd src/app; node server.js"
   },
   "author": "",
   "license": "ISC",

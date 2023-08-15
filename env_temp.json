@@ -1,0 +1,7 @@
+{
+    "user": "USERNAME",
+    "host": "localhost",
+    "database": "expensetracker",
+    "password": "PASSWORD",
+    "port": 5432
+}
