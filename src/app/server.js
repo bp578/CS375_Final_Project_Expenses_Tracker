@@ -137,7 +137,7 @@ app.get(`/login`, async (req, res) => {
         let token = crypto.randomBytes(32).toString("hex");
         tokenStorage[token] = user;
         console.log(tokenStorage);
-        return res.cookie("token", token, cookieOptions).json({ url: `http://${hostname}:${port}/${user}/land.html` });
+        return res.cookie("token", token, cookieOptions).json({ url: `http://${hostname}:${port}/land.html` });
     };
 });
 
