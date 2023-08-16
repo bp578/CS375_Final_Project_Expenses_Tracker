@@ -28,3 +28,18 @@ function addTransaction() {
     console.log("Expense added");
     expenses.append(tableRow);
 }
+
+document.getElementById("logout").addEventListener("click", async () => {
+    fetch("/logout").then(res => {
+        console.log(res.status);
+        if (res.status >= 400){
+            return res.json().then(body => {
+                console.log(body["error"]);
+            });
+        } else {
+            return res.json().then(body => {
+                window.location.href = body["url"];
+            })
+        }
+    })
+})
