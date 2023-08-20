@@ -7,7 +7,7 @@ let crypto = require("crypto");
 let env;
 try {
     env = require("../../env.json");
-} catch (err){
+} catch (err) {
     env = require("../../env_temp.json");
 };
 
@@ -25,9 +25,9 @@ pool.connect().then(() => {
 
 let tokenStorage = {};
 
-function verifyToken(token){
+function verifyToken(token) {
     try {
-        if (tokenStorage[token]){
+        if (tokenStorage[token]) {
             return tokenStorage[token];
         }
     } catch (error) {
@@ -137,14 +137,14 @@ app.get(`/login`, async (req, res) => {
         let token = crypto.randomBytes(32).toString("hex");
         tokenStorage[token] = user;
         console.log(tokenStorage);
-        return res.cookie("token", token, cookieOptions).json({ url: `http://${hostname}:${port}/${user}/land.html` });
+        return res.cookie("token", token, cookieOptions).json({ url: `http://${hostname}:${port}/land.html?user=${user}` });
     };
 });
 
 function assignTableToUser(user) {
     pool.query(
         `CREATE TABLE ${user} (
-            transaction_id INT PRIMARY KEY,
+            transaction_id SERIAL PRIMARY KEY,
             date DATE,
             transaction_name VARCHAR(50),
             category VARCHAR(50),
@@ -183,7 +183,6 @@ app.post('/add', (req, res) => {
         return res.status(500).send();
     })
 
-    //Add to database once that is implemented. Return an empty json body for now. 
     return res.status(200).send();
 
 });

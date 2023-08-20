@@ -7,11 +7,16 @@
     <link rel="stylesheet" type="text/css" href="styles.css">
 </head>
 <body>
-    <header>Welcome User!</header>
+    <h1 id="welcome">Welcome User!</h1>
     <div class="form">
         <div>
             <label for="transaction">Transaction:</label>
             <input id="transaction" name="transaction" type="text">
+        </div>
+
+        <div>
+            <label for="date">Date:</label>
+            <input id="date" name="date" type="date">
         </div>
 
         <div>
@@ -41,7 +46,7 @@
     <button id="add">Add transaction</button>
     <table>
         <thead>
-            <tr><th>Transaction</th><th>Category</th><th>Amount</th></tr>
+            <tr><th>ID</th><th>Transaction name</th><th>Date</th><th>Category</th><th>Amount</th></tr>
         </thead>
         <tbody id="expenses"></tbody>
     </table>
