@@ -158,7 +158,23 @@ function assignTableToUser(user) {
     });
 }
 
-// Adding/Deleting Expenses
+// Get all expenses from a user
+app.get("/expenses", (req, res) => {
+    let user = req.query.user;
+
+    pool.query(`SELECT * FROM ${user}`).then(result => {
+        console.log(`Displaying all expenses for user: ${user}`);
+        console.log(result.rows);
+        return res.status(200).json({ rows: result.rows });
+    }).catch(error => {
+        console.log(`Error initializing table for user: ${user}`);
+        console.log(error);
+        return res.status(500).send();
+    });
+
+})
+
+// Adding Expenses
 app.post('/add', (req, res) => {
     let body = req.body;
     let user = body.user;
