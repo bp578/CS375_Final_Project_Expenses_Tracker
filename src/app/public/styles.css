@@ -13,3 +13,10 @@ th, td {
     border: 1px solid black;
     padding: 10px;
 }
+
+.form {
+    border: 1px solid black;
+    padding: 10px;
+    width: 40%;
+    background-color: lightgreen;
+}

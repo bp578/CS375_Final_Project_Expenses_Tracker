@@ -1,32 +1,103 @@
-let transaction = document.getElementById("transaction");
-let category = document.getElementById("category");
-let amount = document.getElementById("amount");
+let transactionName = document.getElementById("transaction");
+let transactionDate = document.getElementById("date");
+let transactionCategory = document.getElementById("category");
+let transactionAmount = document.getElementById("amount");
 let expenses = document.getElementById("expenses");
 let addButton = document.getElementById("add");
+//let username = params.get("user");
+let welcome = document.getElementById("welcome");
+let csvFile = document.getElementById("csvFileInput");
+let uploadCsvButton = document.getElementById("uploadCsvButton");
+
 
 addButton.addEventListener('click', addTransaction);
+uploadCsvButton.addEventListener('click', addTransactionsFromCsv);
+welcome.textContent = `Your expenses`;
+
+
+updateTable();
+
+//Add expenses from database to table when user logs in
+function updateTable() {
+    fetch(`/expenses`).then(response => {
+        console.log("Updating table...")
+        console.log(response.status);
+        return response.json();
+    }).then(data => {
+        let rows = data.rows;
+        console.log(data.rows);
+        if (rows) {
+            expenses.textContent = '';
+            for (let row of rows) {
+                let tableRow = document.createElement("tr");
+                let idData = document.createElement("td");
+                let nameData = document.createElement("td");
+                let dateData = document.createElement("td");
+                let categoryData = document.createElement("td");
+                let amountData = document.createElement("td");
+
+                //Initialize data
+                idData.textContent = row["transaction_id"];
+                nameData.textContent = row["transaction_name"];
+                dateData = row["date"].slice(0, 10);
+                categoryData.textContent = row["category"];
+                amountData.textContent = `$${row["amount"]}`;
+
+                //Add data to row
+                tableRow.append(idData);
+                tableRow.append(nameData);
+                tableRow.append(dateData);
+                tableRow.append(categoryData);
+                tableRow.append(amountData);
+
+                expenses.append(tableRow);
+            }
+        } else {
+            console.log("No rows found.");
+        }
+    }).catch(error => {
+        console.log("Error initializing table");
+        console.log(error);
+    });
+}
 
 function addTransaction() {
-    //Add fetch function that adds the transaction to the database. Do this once database is implemented
+    fetch("/add", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ transaction: transactionName.value, date: transactionDate.value, category: transactionCategory.value, amount: transactionAmount.value }),
+    }).then(response => {
+        console.log("Response recieved");
+        console.log(`Status: ${response.status}`);
+        updateTable();
+    }).catch(error => {
+        console.log(error);
+    });
+}
 
-    //For now, add to the table using user input
-    let tableRow = document.createElement("tr");
-    let transactionData = document.createElement("td");
-    let categoryData = document.createElement("td");
-    let amountData = document.createElement("td");
+function addTransactionsFromCsv() {
+    const file = csvFile.files[0];
 
-    //Initialize data
-    transactionData.textContent = transaction.value;
-    categoryData.textContent = category.value;
-    amountData.textContent = amount.value;
+    if (file) {
+        const formData = new FormData();
+        formData.append('csvFile', file);
 
-    //Add data to row
-    tableRow.append(transactionData);
-    tableRow.append(categoryData);
-    tableRow.append(amountData);
+        fetch(`/upload`, {
+            method: 'POST',
+            body: formData
+        }).then(response => response.text()
+        ).then(data => {
+            console.log(data);
+            updateTable();
+        }).catch(error => {
+            console.error('Error: ', error);
+        });
 
-    console.log("Expense added");
-    expenses.append(tableRow);
+
+        //TODO: Find out how to fully update table after CSV is uploaded (currently only updates one row);
+    }
 }
 
 document.getElementById("logout").addEventListener("click", async () => {
