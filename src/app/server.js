@@ -18,6 +18,7 @@ let hostname = "localhost";
 let port = 3000;
 let app = express();
 let pool = new Pool(env);
+app.use(cookieParser());
 
 app.use(express.static(__dirname + "/public"));
 
@@ -140,7 +141,7 @@ app.get(`/login`, async (req, res) => {
         let token = crypto.randomBytes(32).toString("hex");
         tokenStorage[token] = user;
         console.log(tokenStorage);
-        return res.cookie("token", token, cookieOptions).json({ url: `http://${hostname}:${port}/land.html?user=${user}` });
+        return res.cookie("token", token, cookieOptions).json({ url: `http://${hostname}:${port}/land.html` });
     };
 });
 
@@ -163,8 +164,10 @@ function assignTableToUser(user) {
 
 // Get all expenses from a user
 app.get("/expenses", (req, res) => {
-    let user = req.query.user;
-
+    let { token } = req.cookies;
+    let user = tokenStorage[token];
+    console.log(`TOKEN: ${token}`);
+    console.log(`USERNAME FROM COOKIE: ${user}`);
     pool.query(`SELECT * FROM ${user}`).then(result => {
         console.log(`Displaying all expenses for user: ${user}`);
         console.log(result.rows);
@@ -179,8 +182,9 @@ app.get("/expenses", (req, res) => {
 
 // Adding Expenses
 app.post('/add', (req, res) => {
+    let { token } = req.cookies;
+    let user = tokenStorage[token];
     let body = req.body;
-    let user = body.user;
     let transaction = body.transaction;
     let date = body.date;
     let category = body.category;
@@ -191,36 +195,25 @@ app.post('/add', (req, res) => {
     }
 
     addExpenseToDatabase(user, date, transaction, category, amount)
-    /*
-    pool.query(
-        `INSERT INTO ${user}(date, transaction_name, category, amount) VALUES($1, $2, $3, $4) RETURNING *`,
-        [date, transaction, category, amount]
-    ).then((result) => {
-        console.log("Inserted: ");
-        console.log(result.rows);
-    }).catch((error) => {
-        console.log(`Error: Cannot add expenses to user `);
-        console.log(error);
-        return res.status(500).send();
-    })
-    */
+
     return res.status(200).send();
 
 });
 
 //Add expenses from CSV file
 app.post('/upload', upload.single('csvFile'), (req, res) => {
+    let { token } = req.cookies;
+    let csvFilePath = req.file.path;
+    let csvContent = fs.readFileSync(csvFilePath, 'utf8');
+    let user = tokenStorage[token];
+
     if (!req.file) {
         return res.status(400).send('Error: No File Uploaded');
     }
 
-    if (!req.query.user) {
+    if (!user) {
         return res.status(400).send('Error: User missing');
     }
-
-    let csvFilePath = req.file.path;
-    let csvContent = fs.readFileSync(csvFilePath, 'utf8');
-    let user = req.query.user;
 
     const csvRows = csvContent.split('\n');
     const headers = csvRows[0].split(',');
@@ -251,7 +244,7 @@ async function addExpenseToDatabase(user, date, transaction, category, amount) {
 
 //Validation
 function addRequestIsValid(body) {
-    if (!body.transaction || !body.date || !body.user || !body.category || !body.amount) {
+    if (!body.transaction || !body.date || !body.category || !body.amount) {
         return false;
     }
 

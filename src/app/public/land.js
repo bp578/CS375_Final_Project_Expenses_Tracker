@@ -4,8 +4,7 @@ let transactionCategory = document.getElementById("category");
 let transactionAmount = document.getElementById("amount");
 let expenses = document.getElementById("expenses");
 let addButton = document.getElementById("add");
-let params = new URLSearchParams(window.location.search);
-let username = params.get("user");
+//let username = params.get("user");
 let welcome = document.getElementById("welcome");
 let csvFile = document.getElementById("csvFileInput");
 let uploadCsvButton = document.getElementById("uploadCsvButton");
@@ -13,14 +12,14 @@ let uploadCsvButton = document.getElementById("uploadCsvButton");
 
 addButton.addEventListener('click', addTransaction);
 uploadCsvButton.addEventListener('click', addTransactionsFromCsv);
-welcome.textContent = `Welcome, ${username}`;
+welcome.textContent = `Your expenses`;
 
 
 updateTable();
 
 //Add expenses from database to table when user logs in
 function updateTable() {
-    fetch(`/expenses?user=${username}`).then(response => {
+    fetch(`/expenses`).then(response => {
         console.log("Updating table...")
         console.log(response.status);
         return response.json();
@@ -68,7 +67,7 @@ function addTransaction() {
         headers: {
             "Content-Type": "application/json"
         },
-        body: JSON.stringify({ user: username, transaction: transactionName.value, date: transactionDate.value, category: transactionCategory.value, amount: transactionAmount.value }),
+        body: JSON.stringify({ transaction: transactionName.value, date: transactionDate.value, category: transactionCategory.value, amount: transactionAmount.value }),
     }).then(response => {
         console.log("Response recieved");
         console.log(`Status: ${response.status}`);
@@ -85,18 +84,17 @@ function addTransactionsFromCsv() {
         const formData = new FormData();
         formData.append('csvFile', file);
 
-        const postData = async () => {
-            fetch(`/upload?user=${username}`, {
-                method: 'POST',
-                body: formData
-            }).then(response => response.text()
-            ).then(data => {
-                console.log(data);
-                updateTable();
-            }).catch(error => {
-                console.error('Error: ', error);
-            });
-        }
+        fetch(`/upload`, {
+            method: 'POST',
+            body: formData
+        }).then(response => response.text()
+        ).then(data => {
+            console.log(data);
+            updateTable();
+        }).catch(error => {
+            console.error('Error: ', error);
+        });
+
 
         //TODO: Find out how to fully update table after CSV is uploaded (currently only updates one row);
     }
