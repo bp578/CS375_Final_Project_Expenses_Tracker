@@ -3,11 +3,14 @@ let { Pool } = require("pg");
 let argon2 = require("argon2");
 let cookieParser = require("cookie-parser");
 let crypto = require("crypto");
+let multer = require('multer');
+let fs = require('fs');
+let upload = multer({ dest: 'uploads/' });
 
 let env;
 try {
     env = require("../../env.json");
-} catch (err){
+} catch (err) {
     env = require("../../env_temp.json");
 };
 
@@ -15,6 +18,7 @@ let hostname = "localhost";
 let port = 3000;
 let app = express();
 let pool = new Pool(env);
+app.use(cookieParser());
 
 app.use(express.static(__dirname + "/public"));
 app.use(express.json());
@@ -142,7 +146,7 @@ app.get(`/login`, async (req, res) => {
 function assignTableToUser(user) {
     pool.query(
         `CREATE TABLE ${user} (
-            transaction_id INT PRIMARY KEY,
+            transaction_id SERIAL PRIMARY KEY,
             date DATE,
             transaction_name VARCHAR(50),
             category VARCHAR(50),
@@ -156,10 +160,29 @@ function assignTableToUser(user) {
     });
 }
 
-// Adding/Deleting Expenses
+// Get all expenses from a user
+app.get("/expenses", (req, res) => {
+    let { token } = req.cookies;
+    let user = tokenStorage[token];
+    console.log(`TOKEN: ${token}`);
+    console.log(`USERNAME FROM COOKIE: ${user}`);
+    pool.query(`SELECT * FROM ${user}`).then(result => {
+        console.log(`Displaying all expenses for user: ${user}`);
+        console.log(result.rows);
+        return res.status(200).json({ rows: result.rows });
+    }).catch(error => {
+        console.log(`Error initializing table for user: ${user}`);
+        console.log(error);
+        return res.status(500).send();
+    });
+
+})
+
+// Adding Expenses
 app.post('/add', (req, res) => {
+    let { token } = req.cookies;
+    let user = tokenStorage[token];
     let body = req.body;
-    let user = body.user;
     let transaction = body.transaction;
     let date = body.date;
     let category = body.category;
@@ -169,6 +192,41 @@ app.post('/add', (req, res) => {
         return res.status(400).json({ error: "Error with query parameters" });
     }
 
+    addExpenseToDatabase(user, date, transaction, category, amount)
+
+    return res.status(200).send();
+
+});
+
+//Add expenses from CSV file
+app.post('/upload', upload.single('csvFile'), (req, res) => {
+    let { token } = req.cookies;
+    let csvFilePath = req.file.path;
+    let csvContent = fs.readFileSync(csvFilePath, 'utf8');
+    let user = tokenStorage[token];
+
+    if (!req.file) {
+        return res.status(400).send('Error: No File Uploaded');
+    }
+
+    if (!user) {
+        return res.status(400).send('Error: User missing');
+    }
+
+    const csvRows = csvContent.split('\n');
+    const headers = csvRows[0].split(',');
+
+    //TODO: Validate headers to that they are the correct values and correct order
+
+    for (let rowIndex = 1; rowIndex < csvRows.length; rowIndex++) {
+        let values = csvRows[rowIndex].split(',');
+        addExpenseToDatabase(user, values[0], values[1], values[2], values[3]);
+    }
+
+    res.status(200).send('File reading successful');
+});
+
+async function addExpenseToDatabase(user, date, transaction, category, amount) {
     pool.query(
         `INSERT INTO ${user}(date, transaction_name, category, amount) VALUES($1, $2, $3, $4) RETURNING *`,
         [date, transaction, category, amount]
@@ -180,15 +238,11 @@ app.post('/add', (req, res) => {
         console.log(error);
         return res.status(500).send();
     })
-
-    //Add to database once that is implemented. Return an empty json body for now. 
-    return res.status(200).send();
-
-});
+}
 
 //Validation
 function addRequestIsValid(body) {
-    if (!body.transaction || !body.date || !body.user || !body.category || !body.amount) {
+    if (!body.transaction || !body.date || !body.category || !body.amount) {
         return false;
     }
     //Any name and category is valid for now. Maybe add a list of all valid categories later?
