@@ -40,10 +40,14 @@
             <label for="amount">Amount ($):</label>
             <input id="amount" type="number">
         </div>
-
+        <button id="add">Add transaction</button>
     </div>
 
-    <button id="add">Add transaction</button>
+    <form id="csvUploadForm">
+        <input type="file" id="csvFileInput" accept=".csv" />
+        <button type="button" id="uploadCsvButton">Add expenses from CSV file</button>
+    </form>
+
     <table>
         <thead>
             <tr><th>ID</th><th>Transaction name</th><th>Date</th><th>Category</th><th>Amount ($)</th></tr>

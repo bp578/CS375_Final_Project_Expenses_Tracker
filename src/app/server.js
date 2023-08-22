@@ -3,6 +3,9 @@ let { Pool } = require("pg");
 let argon2 = require("argon2");
 let cookieParser = require("cookie-parser");
 let crypto = require("crypto");
+let multer = require('multer');
+let fs = require('fs');
+let upload = multer({ dest: 'uploads/' });
 
 let env;
 try {
@@ -187,6 +190,8 @@ app.post('/add', (req, res) => {
         return res.status(400).json({ error: "Error with query parameters" });
     }
 
+    addExpenseToDatabase(user, date, transaction, category, amount)
+    /*
     pool.query(
         `INSERT INTO ${user}(date, transaction_name, category, amount) VALUES($1, $2, $3, $4) RETURNING *`,
         [date, transaction, category, amount]
@@ -198,10 +203,51 @@ app.post('/add', (req, res) => {
         console.log(error);
         return res.status(500).send();
     })
-
+    */
     return res.status(200).send();
 
 });
+
+//Add expenses from CSV file
+app.post('/upload', upload.single('csvFile'), (req, res) => {
+    if (!req.file) {
+        return res.status(400).send('Error: No File Uploaded');
+    }
+
+    if (!req.query.user) {
+        return res.status(400).send('Error: User missing');
+    }
+
+    let csvFilePath = req.file.path;
+    let csvContent = fs.readFileSync(csvFilePath, 'utf8');
+    let user = req.query.user;
+
+    const csvRows = csvContent.split('\n');
+    const headers = csvRows[0].split(',');
+
+    //TODO: Validate headers to that they are the correct values and correct order
+
+    for (let rowIndex = 1; rowIndex < csvRows.length; rowIndex++) {
+        let values = csvRows[rowIndex].split(',');
+        addExpenseToDatabase(user, values[0], values[1], values[2], values[3]);
+    }
+
+    res.status(200).send('File reading successful');
+});
+
+async function addExpenseToDatabase(user, date, transaction, category, amount) {
+    pool.query(
+        `INSERT INTO ${user}(date, transaction_name, category, amount) VALUES($1, $2, $3, $4) RETURNING *`,
+        [date, transaction, category, amount]
+    ).then((result) => {
+        console.log("Inserted: ");
+        console.log(result.rows);
+    }).catch((error) => {
+        console.log(`Error: Cannot add expenses to user `);
+        console.log(error);
+        return res.status(500).send();
+    })
+}
 
 //Validation
 function addRequestIsValid(body) {

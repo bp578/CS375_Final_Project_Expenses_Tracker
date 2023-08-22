@@ -7,8 +7,12 @@ let addButton = document.getElementById("add");
 let params = new URLSearchParams(window.location.search);
 let username = params.get("user");
 let welcome = document.getElementById("welcome");
+let csvFile = document.getElementById("csvFileInput");
+let uploadCsvButton = document.getElementById("uploadCsvButton");
+
 
 addButton.addEventListener('click', addTransaction);
+uploadCsvButton.addEventListener('click', addTransactionsFromCsv);
 welcome.textContent = `Welcome, ${username}`;
 
 
@@ -72,5 +76,29 @@ function addTransaction() {
     }).catch(error => {
         console.log(error);
     });
+}
+
+function addTransactionsFromCsv() {
+    const file = csvFile.files[0];
+
+    if (file) {
+        const formData = new FormData();
+        formData.append('csvFile', file);
+
+        const postData = async () => {
+            fetch(`/upload?user=${username}`, {
+                method: 'POST',
+                body: formData
+            }).then(response => response.text()
+            ).then(data => {
+                console.log(data);
+                updateTable();
+            }).catch(error => {
+                console.error('Error: ', error);
+            });
+        }
+
+        //TODO: Find out how to fully update table after CSV is uploaded (currently only updates one row);
+    }
 }
 
