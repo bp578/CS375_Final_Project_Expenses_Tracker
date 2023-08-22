@@ -21,21 +21,21 @@ let pool = new Pool(env);
 app.use(cookieParser());
 
 app.use(express.static(__dirname + "/public"));
-
 app.use(express.json());
+app.use(cookieParser());
+
 pool.connect().then(() => {
     console.log(`Connected to database: ${env.database}`);
 });
 
 let tokenStorage = {};
 
-function verifyToken(token) {
-    try {
-        if (tokenStorage[token]) {
-            return tokenStorage[token];
-        }
-    } catch (error) {
-        return error;
+function isValidToken(){
+    let { token } = req.cookies;
+    if (!tokenStorage.hasOwnProperty(token)) {
+        return false;
+    } else {
+        return true;
     }
 }
 
@@ -247,10 +247,8 @@ function addRequestIsValid(body) {
     if (!body.transaction || !body.date || !body.category || !body.amount) {
         return false;
     }
-
     //Any name and category is valid for now. Maybe add a list of all valid categories later?
     return (Number.isFinite(Number.parseInt(body.amount))) && isValidSQLDateFormat(body.date) && userExists(body.user);
-
 }
 
 function isValidSQLDateFormat(dateString) {
@@ -291,8 +289,19 @@ async function userExists(user) {
         return false;
     }
 }
-app.get("/logout", (req, res) => {
-    res.send();
+
+app.get("/logout", async (req, res) => {
+    let { token } = req.cookies;
+    if (token === undefined) {
+        console.log("Already logged out");
+        return res.status(400).json({error: "Already logged out"});
+    }
+    if (!tokenStorage.hasOwnProperty(token)) {
+        console.log("Token doesn't exist");
+        return res.status(400).json({error: "Token does not exist"});
+    }
+    delete tokenStorage[token];
+    return res.clearCookie("token", cookieOptions).json({url: `http://${hostname}:${port}`});
 });
 
 app.listen(port, hostname, () => {
