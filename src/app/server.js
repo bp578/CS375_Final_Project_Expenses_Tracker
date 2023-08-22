@@ -26,12 +26,12 @@ pool.connect().then(() => {
 
 let tokenStorage = {};
 
-function isValidToken(){
+function isValidToken(req, res, next){
     let { token } = req.cookies;
-    if (!tokenStorage.hasOwnProperty(token)) {
-        return false;
+    if (tokenStorage.hasOwnProperty(token)) {
+        next();
     } else {
-        return true;
+        return res.status(400).json({error: "Invalid Token"})
     }
 }
 
@@ -103,8 +103,6 @@ app.get(`/login`, async (req, res) => {
     let user = req.query.user;
     let pass = req.query.pass;
 
-    console.log("Login attempt:", req.query);
-
     if (user === '' || pass === '') {
         return res.status(400).json({ error: "One or more entries is missing. Unsuccessful login" })
     };
@@ -136,7 +134,7 @@ app.get(`/login`, async (req, res) => {
     } else {
         let token = crypto.randomBytes(32).toString("hex");
         tokenStorage[token] = user;
-        console.log(tokenStorage);
+        console.log("Login attempt Successful:", req.query);
         return res.cookie("token", token, cookieOptions).json({ url: `http://${hostname}:${port}/land.html` });
     };
 });
@@ -238,6 +236,7 @@ async function userExists(user) {
 
 app.get("/logout", async (req, res) => {
     let { token } = req.cookies;
+
     if (token === undefined) {
         console.log("Already logged out");
         return res.status(400).json({error: "Already logged out"});
@@ -247,6 +246,7 @@ app.get("/logout", async (req, res) => {
         return res.status(400).json({error: "Token does not exist"});
     }
     delete tokenStorage[token];
+    console.log("Logout successful");
     return res.clearCookie("token", cookieOptions).json({url: `http://${hostname}:${port}`});
 });
 
