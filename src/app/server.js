@@ -30,7 +30,7 @@ pool.connect().then(() => {
 
 let tokenStorage = {};
 
-function isValidToken(){
+function isValidToken() {
     let { token } = req.cookies;
     if (!tokenStorage.hasOwnProperty(token)) {
         return false;
@@ -218,11 +218,18 @@ app.post('/upload', upload.single('csvFile'), (req, res) => {
     const csvRows = csvContent.split('\n');
     const headers = csvRows[0].split(',');
 
-    //TODO: Validate headers to that they are the correct values and correct order
+    if (!headerIsValid(headers)) {
+        return res.status(400).send("Error: headers are not in this order: date,transaction_name,category,amount. Check spelling and whitespace.")
+    }
 
     for (let rowIndex = 1; rowIndex < csvRows.length; rowIndex++) {
         let values = csvRows[rowIndex].split(',');
-        addExpenseToDatabase(user, values[0], values[1], values[2], values[3]);
+
+        if (!addRequestIsValid({ transaction: values[1], date: values[0], category: values[2], amount: values[3] })) {
+            return res.status(400).send("Error: A value in your rows is not a valid value");
+        }
+
+        await addExpenseToDatabase(user, values[0], values[1], values[2], values[3]);
     }
 
     res.status(200).send('File reading successful');
@@ -244,11 +251,13 @@ async function addExpenseToDatabase(user, date, transaction, category, amount) {
 
 //Validation
 function addRequestIsValid(body) {
+    let categories = ["Food/Drink", "Entertainment", "Housing", "Utilities", "Groceries", "Transportation", "Clothing", "Education", "Healthcare", "Gifts", "Travel", "Misc"];
+
     if (!body.transaction || !body.date || !body.category || !body.amount) {
         return false;
     }
     //Any name and category is valid for now. Maybe add a list of all valid categories later?
-    return (Number.isFinite(Number.parseInt(body.amount))) && isValidSQLDateFormat(body.date) && userExists(body.user);
+    return (Number.isFinite(Number.parseFloat(body.amount))) && isValidSQLDateFormat(body.date) && userExists(body.user) && categories.includes(body.category);
 }
 
 function isValidSQLDateFormat(dateString) {
@@ -290,18 +299,22 @@ async function userExists(user) {
     }
 }
 
+function headerIsValid(header) {
+    return header === ["date", "transaction_name", "category", "amount"]
+}
+
 app.get("/logout", async (req, res) => {
     let { token } = req.cookies;
     if (token === undefined) {
         console.log("Already logged out");
-        return res.status(400).json({error: "Already logged out"});
+        return res.status(400).json({ error: "Already logged out" });
     }
     if (!tokenStorage.hasOwnProperty(token)) {
         console.log("Token doesn't exist");
-        return res.status(400).json({error: "Token does not exist"});
+        return res.status(400).json({ error: "Token does not exist" });
     }
     delete tokenStorage[token];
-    return res.clearCookie("token", cookieOptions).json({url: `http://${hostname}:${port}`});
+    return res.clearCookie("token", cookieOptions).json({ url: `http://${hostname}:${port}` });
 });
 
 app.listen(port, hostname, () => {
