@@ -114,3 +114,24 @@ document.getElementById("logout").addEventListener("click", async () => {
         }
     })
 })
+
+
+document.getElementById("refresh").addEventListener("click", async () => {
+    try {
+        let res = await fetch("/refresh");
+        console.log(res.status);
+        if (res.status >= 400){
+            let body = await res.json()
+        } else {
+            let body = await res.json(); 
+            
+        }
+    } catch (error) {
+        console.log(error);
+    }
+});
+
+document.getElementById("add_recurring").addEventListener("click", async () => {
+
+    let res = await fetch("/add_recurring", {method: "POST", headers: {"Content-Type": "application/json"}, body:{}});
+});

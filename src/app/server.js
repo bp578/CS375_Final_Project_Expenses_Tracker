@@ -33,6 +33,7 @@ let tokenStorage = {};
 function isValidToken(req, res, next){
     let { token } = req.cookies;
     if (tokenStorage.hasOwnProperty(token)) {
+        console.log("Valid Token!")
         next();
     } else {
         return res.status(400).json({error: "Invalid Token"})
@@ -90,6 +91,7 @@ app.post('/create', async (req, res) => {
 
                 // Create a table of expenses tied to a user
                 assignTableToUser(user);
+                assignRecurringTableToUser(user);
 
                 return res.status(200).json({ success: "Account has been successfully created. Please return to the login menu to login" });
             }).catch(error => {
@@ -155,31 +157,48 @@ function assignTableToUser(user) {
     ).then(result => {
         console.log(`Table has been created for user: ${user}`);
     }).catch(error => {
-        console.log(`Could not make table for user: ${user}`)
+        console.log(`Could not make table for user: ${user}`);
+        console.log(error);
+    });
+}
+
+function assignRecurringTableToUser(user){
+    pool.query(
+        `CREATE TABLE ${user}_recurring (
+            transaction_id SERIAL PRIMARY KEY,
+            date DATE,
+            transaction_name VARCHAR(50),
+            category VARCHAR(50),
+            amount INT,
+            frequency VARCHAR(10)
+         )`
+    ).then(result => {
+        console.log(`Recurring Payments Table has been created for user: ${user}`);
+    }).catch(error => {
+        console.log(`Could not make recurring payment table for user: ${user}`)
         console.log(error);
     });
 }
 
 // Get all expenses from a user
-app.get("/expenses", (req, res) => {
+app.get("/expenses", isValidToken, (req, res) => {
     let { token } = req.cookies;
     let user = tokenStorage[token];
-    console.log(`TOKEN: ${token}`);
-    console.log(`USERNAME FROM COOKIE: ${user}`);
+    // console.log(`TOKEN: ${token}`);
+    // console.log(`USERNAME FROM COOKIE: ${user}`);
     pool.query(`SELECT * FROM ${user}`).then(result => {
         console.log(`Displaying all expenses for user: ${user}`);
-        console.log(result.rows);
+        // console.log(result.rows);
         return res.status(200).json({ rows: result.rows });
     }).catch(error => {
         console.log(`Error initializing table for user: ${user}`);
         console.log(error);
         return res.status(500).send();
     });
-
-})
+});
 
 // Adding Expenses
-app.post('/add', (req, res) => {
+app.post('/add', isValidToken, (req, res) => {
     let { token } = req.cookies;
     let user = tokenStorage[token];
     let body = req.body;
@@ -192,14 +211,14 @@ app.post('/add', (req, res) => {
         return res.status(400).json({ error: "Error with query parameters" });
     }
 
-    addExpenseToDatabase(user, date, transaction, category, amount)
+    addExpenseToDatabase(user, date, transaction, category, amount);
 
     return res.status(200).send();
 
 });
 
 //Add expenses from CSV file
-app.post('/upload', upload.single('csvFile'), (req, res) => {
+app.post('/upload', isValidToken, upload.single('csvFile'), (req, res) => {
     let { token } = req.cookies;
     let csvFilePath = req.file.path;
     let csvContent = fs.readFileSync(csvFilePath, 'utf8');
@@ -228,7 +247,7 @@ app.post('/upload', upload.single('csvFile'), (req, res) => {
 
 async function addExpenseToDatabase(user, date, transaction, category, amount) {
     pool.query(
-        `INSERT INTO ${user}(date, transaction_name, category, amount) VALUES($1, $2, $3, $4) RETURNING *`,
+        `INSERT INTO ${user} (date, transaction_name, category, amount) VALUES($1, $2, $3, $4) RETURNING *`,
         [date, transaction, category, amount]
     ).then((result) => {
         console.log("Inserted: ");
@@ -268,7 +287,7 @@ function isValidSQLDateFormat(dateString) {
         dateObject.getMonth() === month - 1 &&
         dateObject.getDate() === day
     );
-}
+};
 
 async function userExists(user) {
     try {
@@ -297,7 +316,7 @@ app.get("/logout", async (req, res) => {
     }
     if (!tokenStorage.hasOwnProperty(token)) {
         console.log("Token doesn't exist");
-        return res.status(400).json({error: "Token does not exist"});
+        return res.status(400).json({error: "Token does not exist. Cannot Logout"});
     }
     delete tokenStorage[token];
     console.log("Logout successful");

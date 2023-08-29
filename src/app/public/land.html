@@ -9,6 +9,7 @@
 <body>
 
     <h1 id="welcome">Your expenses</h1>
+    <button id="logout">Logout</button>
   
     <div class="form">
         <div>
@@ -58,6 +59,17 @@
         </thead>
         <tbody id="expenses"></tbody>
     </table>
+
+    <section>Recurring Expenses<br>
+        <button id="refresh">Identify Recurring payments</button>
+        <button id="add_recurring">Add Recurring payment</button>
+        <table>
+            <thead>
+                <tr><th>Transaction Name</th><th>Estimated Next Payment Date</th><th>Category</th><th>Amount ($)</th><th>Frequency</th></tr>
+            </thead>
+            <tbody id="recurring"></tbody>
+        </table>
+    </section>
     <script src="land.js"></script>
 </body>
 </html>
