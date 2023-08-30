@@ -200,6 +200,23 @@ app.post('/add', (req, res) => {
 
 });
 
+//Deleting expenses
+app.get('/delete', (req, res) => {
+    let { token } = req.cookies;
+    let user = tokenStorage[token];
+    let id = req.query.id;
+
+    pool.query(`DELETE FROM ${user} WHERE transaction_id='${id}'`).then(result => {
+        console.log(`Displaying all expenses for user: ${user}`);
+        console.log(result.rows);
+        return res.status(200).send();
+    }).catch(error => {
+        console.log(`Error initializing table for user: ${user}`);
+        console.log(error);
+        return res.status(500).send();
+    });
+});
+
 //Add expenses from CSV file
 app.post('/upload', upload.single('csvFile'), async (req, res) => {
     let { token } = req.cookies;

@@ -34,6 +34,7 @@ function updateTable() {
                 let dateData = document.createElement("td");
                 let categoryData = document.createElement("td");
                 let amountData = document.createElement("td");
+                let deleteButton = createDeleteButton(row["transaction_id"]);
 
                 //Initialize data
                 idData.textContent = row["transaction_id"];
@@ -41,6 +42,7 @@ function updateTable() {
                 dateData = row["date"].slice(0, 10);
                 categoryData.textContent = row["category"];
                 amountData.textContent = `$${row["amount"]}`;
+                nameData.append(deleteButton);
 
                 //Add data to row
                 tableRow.append(idData);
@@ -94,6 +96,28 @@ function addTransactionsFromCsv() {
             console.error('Error: ', error);
         });
     }
+}
+
+function createDeleteButton(id) {
+    let button = document.createElement("button");
+    button.className = "delete";
+    button.textContent = "x";
+
+    button.addEventListener('click', deleteRow => {
+        fetch(`/delete?id=${id}`).then(response => {
+            console.log("Deleting row...");
+            console.log(response.status);
+            return response;
+        }).then(response => {
+            updateTable();
+            console.log(`Row of id ${id} deleted`);
+        }).catch(error => {
+            console.log("Error deleting row");
+            console.log(error);
+        });
+    })
+
+    return button;
 }
 
 document.getElementById("logout").addEventListener("click", async () => {

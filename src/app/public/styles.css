@@ -9,9 +9,10 @@ table {
     border-collapse: collapse;
 }
 
-th, td {
+th, td, tr {
     border: 1px solid black;
     padding: 10px;
+    height: 30px;
 }
 
 .form {
@@ -19,4 +20,12 @@ th, td {
     padding: 10px;
     width: 40%;
     background-color: lightgreen;
+}
+
+.delete {
+    margin-left: 10px;
+    height: 50%;
+    text-align: center;
+    background-color: red;
+    font-size: 10px;
 }
