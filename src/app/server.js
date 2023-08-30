@@ -152,7 +152,7 @@ function assignTableToUser(user) {
             date DATE,
             transaction_name VARCHAR(50),
             category VARCHAR(50),
-            amount INT
+            amount DECIMAL(10,2)
          )`
     ).then(result => {
         console.log(`Table has been created for user: ${user}`);
