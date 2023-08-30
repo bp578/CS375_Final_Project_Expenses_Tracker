@@ -180,7 +180,7 @@ app.get("/expenses", (req, res) => {
 
 })
 
-// Adding Expenses
+// Adding Expenses manually
 app.post('/add', (req, res) => {
     let { token } = req.cookies;
     let user = tokenStorage[token];
@@ -201,7 +201,7 @@ app.post('/add', (req, res) => {
 });
 
 //Add expenses from CSV file
-app.post('/upload', upload.single('csvFile'), (req, res) => {
+app.post('/upload', upload.single('csvFile'), async (req, res) => {
     let { token } = req.cookies;
     let csvFilePath = req.file.path;
     let csvContent = fs.readFileSync(csvFilePath, 'utf8');
@@ -232,21 +232,23 @@ app.post('/upload', upload.single('csvFile'), (req, res) => {
         await addExpenseToDatabase(user, values[0], values[1], values[2], values[3]);
     }
 
-    res.status(200).send('File reading successful');
+    res.status(200).send("File upload successful");
 });
 
 async function addExpenseToDatabase(user, date, transaction, category, amount) {
-    pool.query(
-        `INSERT INTO ${user}(date, transaction_name, category, amount) VALUES($1, $2, $3, $4) RETURNING *`,
-        [date, transaction, category, amount]
-    ).then((result) => {
+    try {
+        const result = await pool.query(
+            `INSERT INTO ${user}(date, transaction_name, category, amount) VALUES($1, $2, $3, $4) RETURNING *`,
+            [date, transaction, category, amount]
+        );
+
         console.log("Inserted: ");
         console.log(result.rows);
-    }).catch((error) => {
-        console.log(`Error: Cannot add expenses to user `);
-        console.log(error);
-        return res.status(500).send();
-    })
+    } catch (error) {
+        console.error(`Error: Cannot add expenses to user ${user}`);
+        console.error(error);
+        throw error; // Rethrow the error to be caught by the calling function
+    }
 }
 
 //Validation
@@ -300,7 +302,7 @@ async function userExists(user) {
 }
 
 function headerIsValid(header) {
-    return header === ["date", "transaction_name", "category", "amount"]
+    return JSON.stringify(header) === JSON.stringify(["date", "transaction_name", "category", "amount"]);
 }
 
 app.get("/logout", async (req, res) => {
