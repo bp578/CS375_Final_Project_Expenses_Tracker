@@ -7,10 +7,13 @@ let addButton = document.getElementById("add");
 let welcome = document.getElementById("welcome");
 let csvFile = document.getElementById("csvFileInput");
 let uploadCsvButton = document.getElementById("uploadCsvButton");
+let monthlyexpenses = document.getElementById("monthlyexpenses");
+let months = document.getElementById("months");
 
 
 addButton.addEventListener('click', addTransaction);
 uploadCsvButton.addEventListener('click', addTransactionsFromCsv);
+months.addEventListener('change', getMonthlySpending);
 welcome.textContent = `Your expenses`;
 
 
@@ -118,6 +121,40 @@ function createDeleteButton(id) {
     })
 
     return button;
+}
+
+function getMonthlySpending() {
+    fetch(`/monthly?month=${months.value}`).then(response => {
+        console.log("Updating monthly spending table...")
+        console.log(response.status);
+        return response.json();
+    }).then(data => {
+        let rows = data.rows;
+        console.log(data.rows);
+        if (rows) {
+            monthlyexpenses.textContent = '';
+            for (let row of rows) {
+                let tableRow = document.createElement("tr");
+                let categoryData = document.createElement("td");
+                let sumData = document.createElement("td");
+
+                //Initialize data
+                categoryData.textContent = row["category"];
+                sumData.textContent = `$${row["sum"]}`;
+
+                //Add data to row
+                tableRow.append(categoryData);
+                tableRow.append(sumData);
+
+                monthlyexpenses.append(tableRow);
+            }
+        } else {
+            console.log("No rows found.");
+        }
+    }).catch(error => {
+        console.log("Error initializing table");
+        console.log(error);
+    });
 }
 
 document.getElementById("logout").addEventListener("click", async () => {
