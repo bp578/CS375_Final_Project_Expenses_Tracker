@@ -248,7 +248,7 @@ app.post('/upload', isValidToken, upload.single('csvFile'), (req, res) => {
             return res.status(400).send("Error: A value in your rows is not a valid value");
         }
 
-        await addExpenseToDatabase(user, values[0], values[1], values[2], values[3]);
+        //await addExpenseToDatabase(user, values[0], values[1], values[2], values[3]);
     }
 
     res.status(200).send("File upload successful");
@@ -261,11 +261,11 @@ async function addExpenseToDatabase(user, date, transaction, category, amount) {
     ).then((result) => {
         console.log("Inserted: ");
         console.log(result.rows);
-    } catch (error) {
+    }).catch((error) => {
         console.error(`Error: Cannot add expenses to user ${user}`);
         console.error(error);
         throw error; // Rethrow the error to be caught by the calling function
-    }
+    })
 }
 
 //Validation
