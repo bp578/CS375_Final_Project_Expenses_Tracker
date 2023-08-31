@@ -4,7 +4,6 @@ let transactionCategory = document.getElementById("category");
 let transactionAmount = document.getElementById("amount");
 let expenses = document.getElementById("expenses");
 let addButton = document.getElementById("add");
-//let username = params.get("user");
 let welcome = document.getElementById("welcome");
 let csvFile = document.getElementById("csvFileInput");
 let uploadCsvButton = document.getElementById("uploadCsvButton");
@@ -94,16 +93,13 @@ function addTransactionsFromCsv() {
         }).catch(error => {
             console.error('Error: ', error);
         });
-
-
-        //TODO: Find out how to fully update table after CSV is uploaded (currently only updates one row);
     }
 }
 
 document.getElementById("logout").addEventListener("click", async () => {
     fetch("/logout").then(res => {
         console.log(res.status);
-        if (res.status >= 400){
+        if (res.status >= 400) {
             return res.json().then(body => {
                 console.log(body["error"]);
             });

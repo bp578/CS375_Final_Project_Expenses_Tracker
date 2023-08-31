@@ -30,6 +30,7 @@ pool.connect().then(() => {
 
 let tokenStorage = {};
 
+
 function isValidToken(req, res, next){
     let { token } = req.cookies;
     if (tokenStorage.hasOwnProperty(token)) {
@@ -197,6 +198,7 @@ app.get("/expenses", isValidToken, (req, res) => {
     });
 });
 
+//Adding Expenses manually
 // Adding Expenses
 app.post('/add', isValidToken, (req, res) => {
     let { token } = req.cookies;
@@ -235,14 +237,21 @@ app.post('/upload', isValidToken, upload.single('csvFile'), (req, res) => {
     const csvRows = csvContent.split('\n');
     const headers = csvRows[0].split(',');
 
-    //TODO: Validate headers to that they are the correct values and correct order
+    if (!headerIsValid(headers)) {
+        return res.status(400).send("Error: headers are not in this order: date,transaction_name,category,amount. Check spelling and whitespace.")
+    }
 
     for (let rowIndex = 1; rowIndex < csvRows.length; rowIndex++) {
         let values = csvRows[rowIndex].split(',');
-        addExpenseToDatabase(user, values[0], values[1], values[2], values[3]);
+
+        if (!addRequestIsValid({ transaction: values[1], date: values[0], category: values[2], amount: values[3] })) {
+            return res.status(400).send("Error: A value in your rows is not a valid value");
+        }
+
+        await addExpenseToDatabase(user, values[0], values[1], values[2], values[3]);
     }
 
-    res.status(200).send('File reading successful');
+    res.status(200).send("File upload successful");
 });
 
 async function addExpenseToDatabase(user, date, transaction, category, amount) {
@@ -252,20 +261,22 @@ async function addExpenseToDatabase(user, date, transaction, category, amount) {
     ).then((result) => {
         console.log("Inserted: ");
         console.log(result.rows);
-    }).catch((error) => {
-        console.log(`Error: Cannot add expenses to user `);
-        console.log(error);
-        return res.status(500).send();
-    })
+    } catch (error) {
+        console.error(`Error: Cannot add expenses to user ${user}`);
+        console.error(error);
+        throw error; // Rethrow the error to be caught by the calling function
+    }
 }
 
 //Validation
 function addRequestIsValid(body) {
+    let categories = ["Food/Drink", "Entertainment", "Housing", "Utilities", "Groceries", "Transportation", "Clothing", "Education", "Healthcare", "Gifts", "Travel", "Misc"];
+
     if (!body.transaction || !body.date || !body.category || !body.amount) {
         return false;
     }
     //Any name and category is valid for now. Maybe add a list of all valid categories later?
-    return (Number.isFinite(Number.parseInt(body.amount))) && isValidSQLDateFormat(body.date) && userExists(body.user);
+    return (Number.isFinite(Number.parseFloat(body.amount))) && isValidSQLDateFormat(body.date) && userExists(body.user) && categories.includes(body.category);
 }
 
 function isValidSQLDateFormat(dateString) {
@@ -307,20 +318,24 @@ async function userExists(user) {
     }
 }
 
+function headerIsValid(header) {
+    return JSON.stringify(header) === JSON.stringify(["date", "transaction_name", "category", "amount"]);
+}
+
 app.get("/logout", async (req, res) => {
     let { token } = req.cookies;
 
     if (token === undefined) {
         console.log("Already logged out");
-        return res.status(400).json({error: "Already logged out"});
+        return res.status(400).json({ error: "Already logged out" });
     }
     if (!tokenStorage.hasOwnProperty(token)) {
         console.log("Token doesn't exist");
-        return res.status(400).json({error: "Token does not exist. Cannot Logout"});
+
+        return res.status(400).json({ error: "Token does not exist" });
     }
     delete tokenStorage[token];
-    console.log("Logout successful");
-    return res.clearCookie("token", cookieOptions).json({url: `http://${hostname}:${port}`});
+    return res.clearCookie("token", cookieOptions).json({ url: `http://${hostname}:${port}` });
 });
 
 app.listen(port, hostname, () => {
