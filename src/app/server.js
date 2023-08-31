@@ -167,7 +167,6 @@ function assignRecurringTableToUser(user){
     pool.query(
         `CREATE TABLE ${user}_recurring (
             transaction_id SERIAL PRIMARY KEY,
-            date DATE,
             transaction_name VARCHAR(50),
             category VARCHAR(50),
             amount INT,
@@ -321,6 +320,38 @@ async function userExists(user) {
 function headerIsValid(header) {
     return JSON.stringify(header) === JSON.stringify(["date", "transaction_name", "category", "amount"]);
 }
+
+app.post("/add_recurring",isValidToken, async (req, res) => {
+    let {transaction, category, amount, frequency } = req.body;
+    let { token } = req.cookies;
+    let user = tokenStorage[token];
+
+    try {
+        let response = await pool.query(`INSERT INTO ${user}_recurring (transaction_name, category, amount, frequency) VALUES($1, $2, $3, $4) RETURNING *`,
+        [transaction, category, amount, frequency]);
+        console.log("Rows Inserted:", response.rows);
+        return res.status(200).json({"success": true});
+    } catch (error){
+        console.log(error);
+        return res.status(400).json({"Success": false});
+    }
+})
+
+app.get("/recurring", isValidToken, (req, res) => {
+    let { token } = req.cookies;
+    let user = tokenStorage[token];
+    // console.log(`TOKEN: ${token}`);
+    // console.log(`USERNAME FROM COOKIE: ${user}`);
+    pool.query(`SELECT * FROM ${user}_recurring`).then(result => {
+        console.log(`Displaying all recurring payments for user: ${user}`);
+        // console.log(result.rows);
+        return res.status(200).json({ rows: result.rows });
+    }).catch(error => {
+        console.log(`Error initializing table for user: ${user}`);
+        console.log(error);
+        return res.status(500).send();
+    });
+});
 
 app.get("/logout", async (req, res) => {
     let { token } = req.cookies;
