@@ -115,6 +115,7 @@ function createDeleteButton(id) {
             return response;
         }).then(response => {
             updateTable();
+            getMonthlySpending();
             console.log(`Row of id ${id} deleted`);
         }).catch(error => {
             console.log("Error deleting row");
