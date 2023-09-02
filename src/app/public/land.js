@@ -16,7 +16,7 @@ uploadCsvButton.addEventListener('click', addTransactionsFromCsv);
 months.addEventListener('change', getMonthlySpending);
 welcome.textContent = `Your expenses`;
 
-
+getMonthlySpending();
 updateTable();
 
 //Add expenses from database to table when user logs in
@@ -76,6 +76,7 @@ function addTransaction() {
         console.log("Response recieved");
         console.log(`Status: ${response.status}`);
         updateTable();
+        getMonthlySpending();
     }).catch(error => {
         console.log(error);
     });
@@ -95,6 +96,7 @@ function addTransactionsFromCsv() {
         ).then(data => {
             console.log(data);
             updateTable();
+            getMonthlySpending();
         }).catch(error => {
             console.error('Error: ', error);
         });
