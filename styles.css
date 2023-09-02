@@ -96,14 +96,9 @@ table {
     border: 2px solid #620572;
 }
 
-th, td, tr {
-    border: 1px solid black;
-    padding: 10px;
-    height: 30px;
 th, td {
     border: 1px solid #620572;
     padding: 10px;
-    height: 30px;
     text-align: center;
     font-weight: bold;
 }
@@ -119,24 +114,4 @@ thead {
     padding: 2rem;
     font-size: 32px;
     color: #620572;
-}
-
-.delete {
-    margin-left: 10px;
-    height: 50%;
-    text-align: center;
-    background-color: red;
-    font-size: 10px;
-}
-
-.tables {
-    display: flex;
-}
-
-.table_container {
-    padding: 10px;
-}
-
-.label {
-    text-align: center;
 }

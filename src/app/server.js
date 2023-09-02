@@ -31,12 +31,14 @@ pool.connect().then(() => {
 
 let tokenStorage = {};
 
-function isValidToken() {
+
+function isValidToken(req, res, next){
     let { token } = req.cookies;
-    if (!tokenStorage.hasOwnProperty(token)) {
-        return false;
+    if (tokenStorage.hasOwnProperty(token)) {
+        console.log("Valid Token!")
+        next();
     } else {
-        return true;
+        return res.status(400).json({error: "Invalid Token"})
     }
 }
 
@@ -91,6 +93,7 @@ app.post('/create', async (req, res) => {
 
                 // Create a table of expenses tied to a user
                 assignTableToUser(user);
+                assignRecurringTableToUser(user);
 
                 return res.status(200).json({ success: "Account has been successfully created. Please return to the login menu to login" });
             }).catch(error => {
@@ -107,8 +110,6 @@ app.post('/create', async (req, res) => {
 app.get(`/login`, async (req, res) => {
     let user = req.query.user;
     let pass = req.query.pass;
-
-    console.log("Login attempt:", req.query);
 
     if (user === '' || pass === '') {
         return res.status(400).json({ error: "One or more entries is missing. Unsuccessful login" })
@@ -141,7 +142,7 @@ app.get(`/login`, async (req, res) => {
     } else {
         let token = crypto.randomBytes(32).toString("hex");
         tokenStorage[token] = user;
-        console.log(tokenStorage);
+        console.log("Login attempt Successful:", req.query);
         return res.cookie("token", token, cookieOptions).json({ url: `http://${hostname}:${port}/land.html` });
     };
 });
@@ -158,31 +159,49 @@ function assignTableToUser(user) {
     ).then(result => {
         console.log(`Table has been created for user: ${user}`);
     }).catch(error => {
-        console.log(`Could not make table for user: ${user}`)
+        console.log(`Could not make table for user: ${user}`);
+        console.log(error);
+    });
+}
+
+function assignRecurringTableToUser(user){
+    pool.query(
+        `CREATE TABLE ${user}_recurring (
+            transaction_id SERIAL PRIMARY KEY,
+            date DATE,
+            transaction_name VARCHAR(50),
+            category VARCHAR(50),
+            amount INT,
+            frequency VARCHAR(10)
+         )`
+    ).then(result => {
+        console.log(`Recurring Payments Table has been created for user: ${user}`);
+    }).catch(error => {
+        console.log(`Could not make recurring payment table for user: ${user}`)
         console.log(error);
     });
 }
 
 // Get all expenses from a user
-app.get("/expenses", (req, res) => {
+app.get("/expenses", isValidToken, (req, res) => {
     let { token } = req.cookies;
     let user = tokenStorage[token];
-    console.log(`TOKEN: ${token}`);
-    console.log(`USERNAME FROM COOKIE: ${user}`);
+    // console.log(`TOKEN: ${token}`);
+    // console.log(`USERNAME FROM COOKIE: ${user}`);
     pool.query(`SELECT * FROM ${user}`).then(result => {
         console.log(`Displaying all expenses for user: ${user}`);
-        console.log(result.rows);
+        // console.log(result.rows);
         return res.status(200).json({ rows: result.rows });
     }).catch(error => {
         console.log(`Error initializing table for user: ${user}`);
         console.log(error);
         return res.status(500).send();
     });
+});
 
-})
-
-// Adding Expenses manually
-app.post('/add', (req, res) => {
+//Adding Expenses manually
+// Adding Expenses
+app.post('/add', isValidToken, (req, res) => {
     let { token } = req.cookies;
     let user = tokenStorage[token];
     let body = req.body;
@@ -195,7 +214,7 @@ app.post('/add', (req, res) => {
         return res.status(400).json({ error: "Error with query parameters" });
     }
 
-    addExpenseToDatabase(user, date, transaction, category, amount)
+    addExpenseToDatabase(user, date, transaction, category, amount);
 
     return res.status(200).send();
 
@@ -218,7 +237,7 @@ app.get('/delete', (req, res) => {
 });
 
 //Add expenses from CSV file
-app.post('/upload', upload.single('csvFile'), async (req, res) => {
+app.post('/upload', isValidToken, upload.single('csvFile'), (req, res) => {
     let { token } = req.cookies;
     let csvFilePath = req.file.path;
     let csvContent = fs.readFileSync(csvFilePath, 'utf8');
@@ -298,12 +317,10 @@ async function totalSpendingPerCategory(user, category, month) {
 
 
 async function addExpenseToDatabase(user, date, transaction, category, amount) {
-    try {
-        const result = await pool.query(
-            `INSERT INTO ${user}(date, transaction_name, category, amount) VALUES($1, $2, $3, $4) RETURNING *`,
-            [date, transaction, category, amount]
-        );
-
+    pool.query(
+        `INSERT INTO ${user} (date, transaction_name, category, amount) VALUES($1, $2, $3, $4) RETURNING *`,
+        [date, transaction, category, amount]
+    ).then((result) => {
         console.log("Inserted: ");
         console.log(result.rows);
     } catch (error) {
@@ -341,7 +358,7 @@ function isValidSQLDateFormat(dateString) {
         dateObject.getMonth() === month - 1 &&
         dateObject.getDate() === day
     );
-}
+};
 
 async function userExists(user) {
     try {
@@ -367,12 +384,14 @@ function headerIsValid(header) {
 
 app.get("/logout", async (req, res) => {
     let { token } = req.cookies;
+
     if (token === undefined) {
         console.log("Already logged out");
         return res.status(400).json({ error: "Already logged out" });
     }
     if (!tokenStorage.hasOwnProperty(token)) {
         console.log("Token doesn't exist");
+
         return res.status(400).json({ error: "Token does not exist" });
     }
     delete tokenStorage[token];
