@@ -327,15 +327,75 @@ app.post("/add_recurring",isValidToken, async (req, res) => {
     let user = tokenStorage[token];
 
     try {
+        let response = await pool.query(`SELECT 1 FROM ${user}_recurring WHERE transaction_name = $1`, [transaction])
+        if (response.rowCount >= 1){
+            return res.status(400).json({error: `The recurring payment ${transaction} already exists`})
+        }
+    } catch (error) {
+        console.log(error);
+    }
+
+    try {
         let response = await pool.query(`INSERT INTO ${user}_recurring (transaction_name, category, amount, frequency) VALUES($1, $2, $3, $4) RETURNING *`,
         [transaction, category, amount, frequency]);
         console.log("Rows Inserted:", response.rows);
         return res.status(200).json({"success": true});
     } catch (error){
         console.log(error);
-        return res.status(400).json({"Success": false});
+        return res.status(400).json({"success": false});
     }
 })
+
+app.post("/deleteRecurring", isValidToken, async (req, res) => {
+    let { transaction } = req.body;
+    let { token } = req.cookies;
+    let user = tokenStorage[token];
+    console.log(transaction);
+
+    try {
+        let query  = await pool.query(`DELETE FROM ${user}_recurring WHERE transaction_name = $1`, [transaction]);
+        console.log(query.rowCount);
+        if (query.rowCount >= 1){
+            return res.json({msg: `${transaction} has been deleted`})
+        } else {
+            return res.json({msg: `${transaction} does not exists. Not deleted`});
+        }
+    } catch (error){
+        console.log(error);
+    }
+});
+
+app.get("/refresh", isValidToken, async (req, res) => {
+    let { token } = req.cookies;
+    let user = tokenStorage[token];
+
+    let uniqueItems;
+    try {
+        let query = await pool.query(`SELECT DISTINCT ON (transaction_name) transaction_name FROM ${user}`)
+        uniqueItems = query.rows;
+    } catch (error){
+        console.log(error);
+    }
+
+    try {
+        for (let item of uniqueItems){
+            let query = await pool.query(`SELECT * FROM ${user} WHERE transaction_name = $1 LIMIT 4`, [item["transaction_name"]]);
+            let totalDays = 0;
+            for (let row of query.rows){
+                let previousDate = new Date(0,0,0);
+                console.log(row['date']);
+                let days = Math.abs(row["date"].getTime() - previousDate.getTime());
+                let NumOfDays = Math.floor(days / (1000 * 3600 * 24));
+                previousDate = row["date"];
+                totalDays += days;
+
+                console.log(NumOfDays);
+            }
+        }
+    } catch (error){
+        console.log(error);
+    }
+});
 
 app.get("/recurring", isValidToken, (req, res) => {
     let { token } = req.cookies;

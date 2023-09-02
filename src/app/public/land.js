@@ -172,6 +172,8 @@ document.getElementById("add_recurring").addEventListener("click", async () => {
     let recurring_category = document.getElementById("category-recurring").value;
     let recurring_amount = document.getElementById("amount-recurring").value;
     let recurring_frequency = document.getElementById("frequency-recurring").value;
+    document.getElementById("recurring-message").textContent = '';
+
 
     try {
         let res = await fetch("/add_recurring", {
@@ -185,11 +187,42 @@ document.getElementById("add_recurring").addEventListener("click", async () => {
             })
         });
         console.log("Response Status:", res.status);
-        let body = await res.json();
-        console.log(body);
-        updateTable();
+        if (res.status >= 400){
+            let error = await res.json();
+            document.getElementById("recurring-message").textContent = error["error"];
+        } else {
+            updateTable();
+        }
 
     } catch (error) {
         console.log(error);
     }
 });
+
+document.getElementById("delete-recurring").addEventListener("click", async () => {
+    let recurringTransaction = document.getElementById("delete-recurring-transaction").value;
+    document.getElementById("recurring-message").textContent = '';
+
+    try {
+        let response = await fetch("/deleteRecurring", {
+            method: "POST", 
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                "transaction": recurringTransaction
+            })
+        });
+
+        console.log(response.status);
+        if (response.status >= 400){
+            let error = await response.json();
+            document.getElementById("recurring-message").textContent = error["error"];
+        } else {
+            let body = await response.json();
+            console.log(body);
+            document.getElementById("recurring-message").textContent = body['msg'];
+            updateTable();
+        }
+    } catch (error) {
+        console.log(error);
+    }
+})

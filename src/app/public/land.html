@@ -111,9 +111,14 @@
                 <option value="Yearly">Yearly</option>
             </select>
         </div>
-
             <button id="refresh">Identify Recurring payments</button>
             <button id="add_recurring">Add Recurring payment</button>
+            <div>
+                <label for="transaction">Transaction:</label>
+                <input id="delete-recurring-transaction" name="transaction" type="text">
+            </div>
+            <button id="delete-recurring">Delete Recurring Payment</button>
+            <div id="recurring-message"></div>
             <table>
                 <thead>
                     <tr><th>Transaction Name</th><th>Category</th><th>Amount ($)</th><th>Frequency</th></tr>
