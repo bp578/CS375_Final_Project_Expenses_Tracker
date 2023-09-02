@@ -18,8 +18,9 @@ let hostname = "localhost";
 let port = 3000;
 let app = express();
 let pool = new Pool(env);
-app.use(cookieParser());
+let categories = ["Food/Drink", "Entertainment", "Housing", "Utilities", "Groceries", "Transportation", "Clothing", "Education", "Healthcare", "Gifts", "Travel", "Misc"];
 
+app.use(cookieParser());
 app.use(express.static(__dirname + "/public"));
 app.use(express.json());
 app.use(cookieParser());
@@ -153,7 +154,7 @@ function assignTableToUser(user) {
             date DATE,
             transaction_name VARCHAR(50),
             category VARCHAR(50),
-            amount INT
+            amount DECIMAL(10,2)
          )`
     ).then(result => {
         console.log(`Table has been created for user: ${user}`);
@@ -219,6 +220,22 @@ app.post('/add', isValidToken, (req, res) => {
 
 });
 
+//Deleting expenses
+app.get('/delete', (req, res) => {
+    let { token } = req.cookies;
+    let user = tokenStorage[token];
+    let id = req.query.id;
+
+    pool.query(`DELETE FROM ${user} WHERE transaction_id='${id}'`).then(result => {
+        console.log(`User ${user} has deleted row with id ${id}`);
+        return res.status(200).send();
+    }).catch(error => {
+        console.log(`Error initializing table for user: ${user}`);
+        console.log(error);
+        return res.status(500).send();
+    });
+});
+
 //Add expenses from CSV file
 app.post('/upload', isValidToken, upload.single('csvFile'), (req, res) => {
     let { token } = req.cookies;
@@ -254,6 +271,51 @@ app.post('/upload', isValidToken, upload.single('csvFile'), (req, res) => {
     res.status(200).send("File upload successful");
 });
 
+//Get Monthly Spending
+app.get('/monthly', async (req, res) => {
+    let { token } = req.cookies;
+    let user = tokenStorage[token];
+    let month = req.query.month;
+    let totalSpending = []
+
+    try {
+        for (let c of categories) {
+            const total = await totalSpendingPerCategory(user, c, month);
+            totalSpending.push({ category: c, sum: total });
+        }
+        console.log(totalSpending);
+        return res.status(200).json({ rows: totalSpending });
+
+    } catch (error) {
+        console.log("Error fetching monthly spending.")
+        return res.status(500).send("Error fetching monthly spending.")
+    }
+
+
+
+});
+
+//Get total amount spent per category
+async function totalSpendingPerCategory(user, category, month) {
+    let queryString = `SELECT SUM(amount) FROM ${user} WHERE category='${category}' AND EXTRACT(MONTH FROM date) = ${month}`;
+
+    try {
+        const result = await pool.query(queryString);
+        let sum = result.rows[0].sum;
+
+        if (!sum) {
+            sum = 0;
+        }
+
+        return sum;
+    } catch (error) {
+        console.log(`Error fetching monthly spending for user: ${user}`);
+        console.log(error);
+        return null;
+    }
+}
+
+
 async function addExpenseToDatabase(user, date, transaction, category, amount) {
     pool.query(
         `INSERT INTO ${user} (date, transaction_name, category, amount) VALUES($1, $2, $3, $4) RETURNING *`,
@@ -270,12 +332,10 @@ async function addExpenseToDatabase(user, date, transaction, category, amount) {
 
 //Validation
 function addRequestIsValid(body) {
-    let categories = ["Food/Drink", "Entertainment", "Housing", "Utilities", "Groceries", "Transportation", "Clothing", "Education", "Healthcare", "Gifts", "Travel", "Misc"];
-
     if (!body.transaction || !body.date || !body.category || !body.amount) {
         return false;
     }
-    //Any name and category is valid for now. Maybe add a list of all valid categories later?
+
     return (Number.isFinite(Number.parseFloat(body.amount))) && isValidSQLDateFormat(body.date) && userExists(body.user) && categories.includes(body.category);
 }
 
