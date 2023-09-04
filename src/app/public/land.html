@@ -106,6 +106,36 @@
             <tbody id="recurring"></tbody>
         </table>
     </section>
+
+    <!-- Add this section to your "land.html" -->
+<section id="budget-section">
+    <h2>Monthly Budgets</h2>
+    <div id="budget-status"></div>
+</section>
+
+<script>
+    // JavaScript code to retrieve and display budget information
+    document.addEventListener("DOMContentLoaded", function() {
+        const budgetStatusElement = document.getElementById("budget-status");
+        budgetStatusElement.innerHTML = ""; // Clear previous content
+
+        // Retrieve and display budget information from local storage
+        for (const key in localStorage) {
+            if (key.startsWith("budget_")) {
+                const category = key.substring(7); // Remove "budget_" prefix
+                const budgetAmount = parseFloat(localStorage.getItem(key));
+                const budgetInfo = document.createElement("p");
+                budgetInfo.textContent = `Category: ${category}, Budget: $${budgetAmount}`;
+                budgetStatusElement.appendChild(budgetInfo);
+            }
+        }
+    });
+</script>
+
+<button id="go-to-set-budget">Set Monthly Budget</button>
+
     <script src="land.js"></script>
+    <script src="budget.js"></script>
+
 </body>
 </html>
