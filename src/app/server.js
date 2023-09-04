@@ -32,13 +32,13 @@ pool.connect().then(() => {
 let tokenStorage = {};
 
 
-function isValidToken(req, res, next){
+function isValidToken(req, res, next) {
     let { token } = req.cookies;
     if (tokenStorage.hasOwnProperty(token)) {
         console.log("Valid Token!")
         next();
     } else {
-        return res.status(400).json({error: "Invalid Token"})
+        return res.status(400).json({ error: "Invalid Token" })
     }
 }
 
@@ -164,7 +164,7 @@ function assignTableToUser(user) {
     });
 }
 
-function assignRecurringTableToUser(user){
+function assignRecurringTableToUser(user) {
     pool.query(
         `CREATE TABLE ${user}_recurring (
             transaction_id SERIAL PRIMARY KEY,
@@ -186,8 +186,6 @@ function assignRecurringTableToUser(user){
 app.get("/expenses", isValidToken, (req, res) => {
     let { token } = req.cookies;
     let user = tokenStorage[token];
-    // console.log(`TOKEN: ${token}`);
-    // console.log(`USERNAME FROM COOKIE: ${user}`);
     pool.query(`SELECT * FROM ${user}`).then(result => {
         console.log(`Displaying all expenses for user: ${user}`);
         // console.log(result.rows);
@@ -200,7 +198,6 @@ app.get("/expenses", isValidToken, (req, res) => {
 });
 
 //Adding Expenses manually
-// Adding Expenses
 app.post('/add', isValidToken, (req, res) => {
     let { token } = req.cookies;
     let user = tokenStorage[token];
@@ -237,7 +234,7 @@ app.get('/delete', (req, res) => {
 });
 
 //Add expenses from CSV file
-app.post('/upload', isValidToken, upload.single('csvFile'), (req, res) => {
+app.post('/upload', isValidToken, upload.single('csvFile'), async (req, res) => {
     let { token } = req.cookies;
     let csvFilePath = req.file.path;
     let csvContent = fs.readFileSync(csvFilePath, 'utf8');
@@ -317,16 +314,18 @@ async function totalSpendingPerCategory(user, category, month) {
 
 
 async function addExpenseToDatabase(user, date, transaction, category, amount) {
-    pool.query(
-        `INSERT INTO ${user} (date, transaction_name, category, amount) VALUES($1, $2, $3, $4) RETURNING *`,
-        [date, transaction, category, amount]
-    ).then((result) => {
-        console.log("Inserted: ");
+    try {
+        const result = await pool.query(
+            `INSERT INTO ${user} (date, transaction_name, category, amount) VALUES($1, $2, $3, $4) RETURNING *`,
+            [date, transaction, category, amount]
+        );
+
+        console.log("Inserted:");
         console.log(result.rows);
     } catch (error) {
-        console.error(`Error: Cannot add expenses to user ${user}`);
+        console.log(`Error: Cannot add expenses to user ${user}`);
         console.error(error);
-        throw error; // Rethrow the error to be caught by the calling function
+        throw error;
     }
 }
 
