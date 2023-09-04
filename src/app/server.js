@@ -314,16 +314,19 @@ async function totalSpendingPerCategory(user, category, month) {
 
 
 async function addExpenseToDatabase(user, date, transaction, category, amount) {
-    pool.query(
-        `INSERT INTO ${user} (date, transaction_name, category, amount) VALUES($1, $2, $3, $4) RETURNING *`,
-        [date, transaction, category, amount]
-    ).then((result) => {
-        console.log("Inserted: ");
+    try {
+        const result = await pool.query(
+            `INSERT INTO ${user} (date, transaction_name, category, amount) VALUES($1, $2, $3, $4) RETURNING *`,
+            [date, transaction, category, amount]
+        );
+
+        console.log("Inserted:");
         console.log(result.rows);
-    }).catch(error => {
+    } catch (error) {
         console.log(`Error: Cannot add expenses to user ${user}`);
         console.error(error);
-    });
+        throw error;
+    }
 }
 
 //Validation
