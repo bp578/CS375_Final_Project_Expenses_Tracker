@@ -195,3 +195,8 @@ document.getElementById("add_recurring").addEventListener("click", async () => {
 
     let res = await fetch("/add_recurring", {method: "POST", headers: {"Content-Type": "application/json"}, body:{}});
 });
+
+// Event listener for the "Set Monthly Budget" button
+document.getElementById("go-to-set-budget").addEventListener("click", function() {
+    window.location.href = "set-budget.html";
+});
