@@ -401,7 +401,7 @@ app.post("/add_recurring",isValidToken, async (req, res) => {
         return res.status(200).json({"success": true});
     } catch (error){
         console.log(error);
-        return res.status(400).json({"success": false});
+        return res.status(400).json({error: "Incorrect Entry. Try Again"});
     }
 })
 
@@ -410,6 +410,10 @@ app.post("/deleteRecurring", isValidToken, async (req, res) => {
     let { token } = req.cookies;
     let user = tokenStorage[token];
     console.log(transaction);
+
+    if (transaction === ''){
+        return res.json({msg: `Blank Entry. Please try again!`});
+    }
 
     try {
         let query  = await pool.query(`DELETE FROM ${user}_recurring WHERE transaction_name = $1`, [transaction]);
