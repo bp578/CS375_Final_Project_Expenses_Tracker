@@ -200,3 +200,21 @@ document.getElementById("add_recurring").addEventListener("click", async () => {
 document.getElementById("go-to-set-budget").addEventListener("click", function() {
     window.location.href = "set-budget.html";
 });
+
+// Event listener for displaying budgets on the "land" page
+document.addEventListener("DOMContentLoaded", displayBudgets);
+
+
+function displayBudgets() {
+    const budgetStatusElement = document.getElementById("budget-status");
+    budgetStatusElement.innerHTML = ""; // Clear previous content
+
+    // Retrieve and display budget information from local storage
+    for (const key in localStorage) {
+        if (key.startsWith("budget_")) {
+            const category = key.substring(7); // Remove "budget_" prefix
+            const budgetAmount = parseFloat(localStorage.getItem(key));
+            const budgetInfo = document.createElement("p");
+            budgetInfo.textContent = `Category: ${category}, Budget: $${budgetAmount}`;
+            budgetStatusElement.appendChild(budgetInfo);
+        }}}
