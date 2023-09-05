@@ -154,13 +154,16 @@ document.getElementById("logout").addEventListener("click", async () => {
 
 document.getElementById("refresh").addEventListener("click", async () => {
     try {
+        document.getElementById("recurring-message").textContent = '';
         let res = await fetch("/refresh");
         console.log(res.status);
         if (res.status >= 400){
-            let body = await res.json()
+            let error = await res.json()
+            document.getElementById("recurring-message").textContent = error["error"];
+
         } else {
             let body = await res.json(); 
-            
+            updateTable();
         }
     } catch (error) {
         console.log(error);
@@ -173,7 +176,6 @@ document.getElementById("add_recurring").addEventListener("click", async () => {
     let recurring_amount = document.getElementById("amount-recurring").value;
     let recurring_frequency = document.getElementById("frequency-recurring").value;
     document.getElementById("recurring-message").textContent = '';
-
 
     try {
         let res = await fetch("/add_recurring", {

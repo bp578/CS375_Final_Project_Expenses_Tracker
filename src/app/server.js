@@ -215,7 +215,6 @@ app.post('/add', isValidToken, (req, res) => {
     addExpenseToDatabase(user, date, transaction, category, amount);
 
     return res.status(200).send();
-
 });
 
 //Add expenses from CSV file
@@ -379,19 +378,95 @@ app.get("/refresh", isValidToken, async (req, res) => {
 
     try {
         for (let item of uniqueItems){
-            let query = await pool.query(`SELECT * FROM ${user} WHERE transaction_name = $1 LIMIT 4`, [item["transaction_name"]]);
-            let totalDays = 0;
-            for (let row of query.rows){
-                let previousDate = new Date(0,0,0);
-                console.log(row['date']);
-                let days = Math.abs(row["date"].getTime() - previousDate.getTime());
-                let NumOfDays = Math.floor(days / (1000 * 3600 * 24));
-                previousDate = row["date"];
-                totalDays += days;
+            let frequency, transaction_name, category, amount;
+            let query = await pool.query(`SELECT * FROM ${user} WHERE transaction_name = $1 LIMIT 3`, [item["transaction_name"]]);
+            console.log(query.rows);
+            transaction_name = item["transaction_name"];
+            let previousName, previousCategory, previousAmount, previousDate;
+            let numOfMatches = 0;
+            let days = [];
+            for (let i = 0; i < query.rows.length; i++){
+                let currentCategory = query.rows[i]["category"];
+                let currentName = query.rows[i]["transaction_name"];
+                let currentAmount = query.rows[i]["amount"];
+                if (i === 0){
+                    previousCategory = currentCategory;
+                    previousName = currentName;
+                    previousAmount = currentAmount;
+                    continue
+                };
 
-                console.log(NumOfDays);
+                if ((currentCategory === previousCategory) && 
+                (currentName === previousName) && 
+                ((previousAmount - 5 <= currentAmount) && (currentAmount <= previousAmount + 5))){
+                    numOfMatches += 1;
+                };
+                previousCategory = currentCategory;
+                previousName = currentName;
+                previousAmount = currentAmount;
+                amount = currentAmount;
+                category = currentCategory;
             }
-        }
+            console.log("num of matches", numOfMatches);
+            if (numOfMatches >= 2){
+                for (let i = 0; i < query.rows.length; i++){
+                    let currentDate = query.rows[i]["date"];
+                    if (i === 0){
+                        previousDate = currentDate;
+                        continue
+                    }
+                    let diffInTime = currentDate.getTime() - previousDate.getTime();
+                    let diffInDays = diffInTime / (1000 * 3600 * 24);
+                    
+                    days.push(diffInDays);
+                    previousDate = currentDate;
+                }
+            } else {
+                continue;
+            }
+            console.log("Days Apart", days);
+
+            let totalDays = 0;
+            for (let i = 0; i < days.length; i++){
+                totalDays += days[i];
+            }
+
+            let averageDays = totalDays / days.length;
+            console.log("Average Days", averageDays);
+
+            console.log("Frequency:", frequency);
+
+            if ((1 <= averageDays) && (averageDays <= 5)){
+                frequency = "Daily";
+            } else if ((6 <= averageDays) && (averageDays <= 10)){
+                frequency = "Weekly";
+            } else if ((11 <= averageDays) && (averageDays <= 16)){
+                frequency = "Bi-Weekly";
+            } else if ((25 <= averageDays) && (averageDays <= 34)){
+                frequency = "monthly";
+            } else {
+                frequency = "yearly";
+            }
+
+            try {
+                let response = await pool.query(`SELECT 1 FROM ${user}_recurring WHERE transaction_name = $1`, [transaction_name])
+                if (response.rowCount >= 1){
+                    return res.status(400).json({error: `The recurring payment ${transaction_name} already exists`})
+                }
+            } catch (error) {
+                console.log(error);
+            }
+
+            try {
+                let response = await pool.query(`INSERT INTO ${user}_recurring (transaction_name, category, amount, frequency) VALUES($1, $2, $3, $4) RETURNING *`,
+                [transaction_name, category, amount, frequency]);
+                console.log("Rows Inserted:", response.rows);
+            } catch (error){
+                console.log(error);
+                return res.status(400).json({error: false});
+            }
+        };
+        return res.status(200).json({"success": true});
     } catch (error){
         console.log(error);
     }
