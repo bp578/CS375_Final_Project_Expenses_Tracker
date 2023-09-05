@@ -168,7 +168,6 @@ function assignRecurringTableToUser(user) {
     pool.query(
         `CREATE TABLE ${user}_recurring (
             transaction_id SERIAL PRIMARY KEY,
-            date DATE,
             transaction_name VARCHAR(50),
             category VARCHAR(50),
             amount INT,
@@ -214,7 +213,6 @@ app.post('/add', isValidToken, (req, res) => {
     addExpenseToDatabase(user, date, transaction, category, amount);
 
     return res.status(200).send();
-
 });
 
 //Deleting expenses
@@ -262,7 +260,7 @@ app.post('/upload', isValidToken, upload.single('csvFile'), async (req, res) => 
             return res.status(400).send("Error: A value in your rows is not a valid value");
         }
 
-        await addExpenseToDatabase(user, values[0], values[1], values[2], values[3]);
+        //await addExpenseToDatabase(user, values[0], values[1], values[2], values[3]);
     }
 
     res.status(200).send("File upload successful");
@@ -322,11 +320,13 @@ async function addExpenseToDatabase(user, date, transaction, category, amount) {
 
         console.log("Inserted:");
         console.log(result.rows);
-    } catch (error) {
-        console.log(`Error: Cannot add expenses to user ${user}`);
+      
+    }).catch((error) => {
+        console.error(`Error: Cannot add expenses to user ${user}`);
         console.error(error);
-        throw error;
-    }
+        throw error; // Rethrow the error to be caught by the calling function
+    });
+
 }
 
 //Validation
@@ -380,6 +380,174 @@ async function userExists(user) {
 function headerIsValid(header) {
     return JSON.stringify(header) === JSON.stringify(["date", "transaction_name", "category", "amount"]);
 }
+
+app.post("/add_recurring",isValidToken, async (req, res) => {
+    let {transaction, category, amount, frequency } = req.body;
+    let { token } = req.cookies;
+    let user = tokenStorage[token];
+
+    try {
+        let response = await pool.query(`SELECT 1 FROM ${user}_recurring WHERE transaction_name = $1`, [transaction])
+        if (response.rowCount >= 1){
+            return res.status(400).json({error: `The recurring payment ${transaction} already exists`})
+        }
+    } catch (error) {
+        console.log(error);
+    }
+
+    try {
+        let response = await pool.query(`INSERT INTO ${user}_recurring (transaction_name, category, amount, frequency) VALUES($1, $2, $3, $4) RETURNING *`,
+        [transaction, category, amount, frequency]);
+        console.log("Rows Inserted:", response.rows);
+        return res.status(200).json({"success": true});
+    } catch (error){
+        console.log(error);
+        return res.status(400).json({"success": false});
+    }
+})
+
+app.post("/deleteRecurring", isValidToken, async (req, res) => {
+    let { transaction } = req.body;
+    let { token } = req.cookies;
+    let user = tokenStorage[token];
+    console.log(transaction);
+
+    try {
+        let query  = await pool.query(`DELETE FROM ${user}_recurring WHERE transaction_name = $1`, [transaction]);
+        console.log(query.rowCount);
+        if (query.rowCount >= 1){
+            return res.json({msg: `${transaction} has been deleted`})
+        } else {
+            return res.json({msg: `${transaction} does not exists. Not deleted`});
+        }
+    } catch (error){
+        console.log(error);
+    }
+});
+
+app.get("/refresh", isValidToken, async (req, res) => {
+    let { token } = req.cookies;
+    let user = tokenStorage[token];
+
+    let uniqueItems;
+    try {
+        let query = await pool.query(`SELECT DISTINCT ON (transaction_name) transaction_name FROM ${user}`)
+        uniqueItems = query.rows;
+    } catch (error){
+        console.log(error);
+    }
+
+    try {
+        for (let item of uniqueItems){
+            let frequency, transaction_name, category, amount;
+            let query = await pool.query(`SELECT * FROM ${user} WHERE transaction_name = $1 LIMIT 3`, [item["transaction_name"]]);
+            console.log(query.rows);
+            transaction_name = item["transaction_name"];
+            let previousName, previousCategory, previousAmount, previousDate;
+            let numOfMatches = 0;
+            let days = [];
+            for (let i = 0; i < query.rows.length; i++){
+                let currentCategory = query.rows[i]["category"];
+                let currentName = query.rows[i]["transaction_name"];
+                let currentAmount = query.rows[i]["amount"];
+                if (i === 0){
+                    previousCategory = currentCategory;
+                    previousName = currentName;
+                    previousAmount = currentAmount;
+                    continue
+                };
+
+                if ((currentCategory === previousCategory) && 
+                (currentName === previousName) && 
+                ((previousAmount - 5 <= currentAmount) && (currentAmount <= previousAmount + 5))){
+                    numOfMatches += 1;
+                };
+                previousCategory = currentCategory;
+                previousName = currentName;
+                previousAmount = currentAmount;
+                amount = currentAmount;
+                category = currentCategory;
+            }
+            console.log("num of matches", numOfMatches);
+            if (numOfMatches >= 2){
+                for (let i = 0; i < query.rows.length; i++){
+                    let currentDate = query.rows[i]["date"];
+                    if (i === 0){
+                        previousDate = currentDate;
+                        continue
+                    }
+                    let diffInTime = currentDate.getTime() - previousDate.getTime();
+                    let diffInDays = diffInTime / (1000 * 3600 * 24);
+                    
+                    days.push(diffInDays);
+                    previousDate = currentDate;
+                }
+            } else {
+                continue;
+            }
+            console.log("Days Apart", days);
+
+            let totalDays = 0;
+            for (let i = 0; i < days.length; i++){
+                totalDays += days[i];
+            }
+
+            let averageDays = totalDays / days.length;
+            console.log("Average Days", averageDays);
+
+            console.log("Frequency:", frequency);
+
+            if ((1 <= averageDays) && (averageDays <= 5)){
+                frequency = "Daily";
+            } else if ((6 <= averageDays) && (averageDays <= 10)){
+                frequency = "Weekly";
+            } else if ((11 <= averageDays) && (averageDays <= 16)){
+                frequency = "Bi-Weekly";
+            } else if ((25 <= averageDays) && (averageDays <= 34)){
+                frequency = "monthly";
+            } else {
+                frequency = "yearly";
+            }
+
+            try {
+                let response = await pool.query(`SELECT 1 FROM ${user}_recurring WHERE transaction_name = $1`, [transaction_name])
+                if (response.rowCount >= 1){
+                    return res.status(400).json({error: `The recurring payment ${transaction_name} already exists`})
+                }
+            } catch (error) {
+                console.log(error);
+            }
+
+            try {
+                let response = await pool.query(`INSERT INTO ${user}_recurring (transaction_name, category, amount, frequency) VALUES($1, $2, $3, $4) RETURNING *`,
+                [transaction_name, category, amount, frequency]);
+                console.log("Rows Inserted:", response.rows);
+            } catch (error){
+                console.log(error);
+                return res.status(400).json({error: false});
+            }
+        };
+        return res.status(200).json({"success": true});
+    } catch (error){
+        console.log(error);
+    }
+});
+
+app.get("/recurring", isValidToken, (req, res) => {
+    let { token } = req.cookies;
+    let user = tokenStorage[token];
+    // console.log(`TOKEN: ${token}`);
+    // console.log(`USERNAME FROM COOKIE: ${user}`);
+    pool.query(`SELECT * FROM ${user}_recurring`).then(result => {
+        console.log(`Displaying all recurring payments for user: ${user}`);
+        // console.log(result.rows);
+        return res.status(200).json({ rows: result.rows });
+    }).catch(error => {
+        console.log(`Error initializing table for user: ${user}`);
+        console.log(error);
+        return res.status(500).send();
+    });
+});
 
 app.get("/logout", async (req, res) => {
     let { token } = req.cookies;
