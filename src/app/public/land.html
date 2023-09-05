@@ -53,22 +53,41 @@
         <button type="button" id="uploadCsvButton">Add expenses from CSV file</button>
     </form>
 
-    <div>
-        <label for="expenses">All expenses: </label>
-        <table>
-            <thead>
-                <tr><th>ID</th><th>Transaction name</th><th>Date</th><th>Category</th><th>Amount ($)</th></tr>
-            </thead>
-            <tbody id="expenses" name="expenses"></tbody>
-        </table>
+    <div class="tables">
+        <div class="table_container">
+            <label for="expenses" class="label">All expenses: </label>
+            <table>
+                <thead>
+                    <tr><th>ID</th><th>Transaction name</th><th>Date</th><th>Category</th><th>Amount ($)</th></tr>
+                </thead>
+                <tbody id="expenses" name="expenses"></tbody>
+            </table>
+        </div>
 
-        <label for="monthlyexpenses">Monthly expenses per category: </label>
-        <table>
-            <thead>
-                <tr><th>ID</th><th>Transaction name</th><th>Date</th><th>Category</th><th>Total Amount Spent ($)</th></tr>
-            </thead>
-            <tbody id="monthlyexpenses"></tbody>
-        </table>
+        <div class="table_container">
+            <label for="monthlyexpenses" class="label">Monthly expenses per category: </label>
+            <select id="months" name="months">
+                <option value="1">January</option>
+                <option value="2">February</option>
+                <option value="3">March</option>
+                <option value="4">April</option>
+                <option value="5">May</option>
+                <option value="6">June</option>
+                <option value="7">July</option>
+                <option value="8">August</option>
+                <option value="9">September</option>
+                <option value="10">October</option>
+                <option value="11">November</option>
+                <option value="12">December</option>
+            </select>
+            <table>
+                <thead>
+                    <tr><th>Category</th><th>Total Amount Spent ($)</th></tr>
+                </thead>
+                <tbody id="monthlyexpenses"></tbody>
+            </table>
+        </div>
+
 
     </div>
 
@@ -125,7 +144,47 @@
                 </thead>
                 <tbody id="recurring"></tbody>
             </table>
+
+    <section>
+        Recurring Expenses<br>
+        <button id="refresh">Identify Recurring payments</button>
+        <button id="add_recurring">Add Recurring payment</button>
+        <table>
+            <thead>
+                <tr><th>Transaction Name</th><th>Estimated Next Payment Date</th><th>Category</th><th>Amount ($)</th><th>Frequency</th></tr>
+            </thead>
+            <tbody id="recurring"></tbody>
+        </table>
     </section>
+
+<section id="budget-section">
+    <h2>Monthly Budgets</h2>
+    <div id="budget-status"></div>
+</section>
+
+<script>
+    // JavaScript code to retrieve and display budget information
+    document.addEventListener("DOMContentLoaded", function() {
+        const budgetStatusElement = document.getElementById("budget-status");
+        budgetStatusElement.innerHTML = ""; // Clear previous content
+
+        // Retrieve and display budget information from local storage
+        for (const key in localStorage) {
+            if (key.startsWith("budget_")) {
+                const category = key.substring(7); // Remove "budget_" prefix
+                const budgetAmount = parseFloat(localStorage.getItem(key));
+                const budgetInfo = document.createElement("p");
+                budgetInfo.textContent = `Category: ${category}, Budget: $${budgetAmount}`;
+                budgetStatusElement.appendChild(budgetInfo);
+            }
+        }
+    });
+</script>
+
+<button id="go-to-set-budget">Set Monthly Budget</button>
+
     <script src="land.js"></script>
+    <script src="budget.js"></script>
+
 </body>
 </html>

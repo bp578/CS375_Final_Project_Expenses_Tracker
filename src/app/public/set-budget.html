@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Set Budget</title>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+
+</head>
+<body>
+    <h1>Set Monthly Budget</h1>
+    <label for="budget-category">Select Category:</label>
+    <select id="budget-category" name="budget-category">
+        <!-- Add options for budget categories here -->
+    </select>
+    <label for="budget-amount">Budget Amount ($):</label>
+    <input id="budget-amount" type="number">
+    <button id="set-budget">Set Budget</button>
+
+    <script>
+        document.getElementById("set-budget").addEventListener("click", function() {
+            const category = document.getElementById("budget-category").value;
+            const budgetAmount = parseFloat(document.getElementById("budget-amount").value);
+
+            localStorage.setItem("budget_" + category, budgetAmount);
+
+            window.location.href = "land.html";
+        });
+    </script>
+    <script src="budget.js"></script>
+
+</body>
+</html>
