@@ -1,5 +1,12 @@
 function setBudget() {
     const category = document.getElementById("budget-category").value;
+    const customCategoryInput = document.getElementById("custom-category");
+    let selectedCategory = categoryDropdown.value;
+
+    if (selectedCategory === "custom") {
+        selectedCategory = customCategoryInput.value.trim();
+    }
+
     const budgetAmount = parseFloat(document.getElementById("budget-amount").value);
 
     localStorage.setItem("budget_" + category, budgetAmount);
