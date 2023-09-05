@@ -16,7 +16,7 @@
 4. Run in terminal `npm run start`
 
 ### CSV File Upload
-- Headers (first fow) MUST be in this form: `date,transaction_name,category,amount`. Make sure there is no extra whitespace.
+- Headers (first row) MUST be in this form: `date,transaction_name,category,amount`. Make sure there is no extra whitespace.
 - date must be a valid SQL date in this format: `YYYY-MM-DD`.
 - transaction_name must be a string of 50 characters or less
 - category must be a string of 50 characters or less
