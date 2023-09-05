@@ -321,12 +321,11 @@ async function addExpenseToDatabase(user, date, transaction, category, amount) {
         console.log("Inserted:");
         console.log(result.rows);
       
-    }).catch((error) => {
-        console.error(`Error: Cannot add expenses to user ${user}`);
+    } catch (error) {
+        console.log(`Error: Cannot add expenses to user ${user}`);
         console.error(error);
-        throw error; // Rethrow the error to be caught by the calling function
-    });
-
+        throw error;
+    }
 }
 
 //Validation
