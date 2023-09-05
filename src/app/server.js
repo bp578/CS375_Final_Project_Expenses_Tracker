@@ -260,7 +260,7 @@ app.post('/upload', isValidToken, upload.single('csvFile'), async (req, res) => 
             return res.status(400).send("Error: A value in your rows is not a valid value");
         }
 
-        //await addExpenseToDatabase(user, values[0], values[1], values[2], values[3]);
+        await addExpenseToDatabase(user, values[0], values[1], values[2], values[3]);
     }
 
     res.status(200).send("File upload successful");
