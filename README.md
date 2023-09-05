@@ -21,3 +21,4 @@
 - transaction_name must be a string of 50 characters or less
 - category must be a string of 50 characters or less
 - amount must be a float rounded to 2 decimal places
+- There is a sample CSV file in the project files called `sample.csv` as an example CSV file in the right format. 
